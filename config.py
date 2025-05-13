@@ -1,4 +1,8 @@
 import os
+from dotenv import load_dotenv
+
+# 1) load before anything else reads os.environ
+load_dotenv()
 
 class Config:
     SQLALCHEMY_DATABASE_URI = (
@@ -7,5 +11,5 @@ class Config:
         f"{os.environ['DB_HOST']}:{os.environ.get('DB_PORT','3306')}/"
         f"{os.environ['DB_NAME']}"
     )
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SECRET_KEY = os.environ['FLASK_SECRET_KEY']
 

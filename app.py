@@ -20,14 +20,19 @@ app.secret_key = os.environ["FLASK_SECRET_KEY"]  # e.g. set in Render as FLASK_S
 # ────── Database Helper ──────
 def get_db_connection():
     return mysql.connector.connect(
-        host     = os.environ["aws-conocancer-db2.c2z0s62si8ab.us-east-1.rds.amazonaws.com"],
-        port     = int(os.environ.get("DB_PORT", 3306)),
-        user     = os.environ["admin"],
-        password = os.environ["SystemsProject25"],
-        database = os.environ["conocancer"],
+        host      = os.environ["DB_HOST"],
+        port      = int(os.environ.get("DB_PORT", 3306)),
+        user      = os.environ["DB_USER"],
+        password  = os.environ["DB_PASSWORD"],
+        database  = os.environ["DB_NAME"],
         autocommit=True
     )
-# ------------------------
+print("DB_HOST:", os.getenv("DB_HOST"))
+print("DB_USER:", os.getenv("DB_USER"))
+
+import openai
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
 # Inject user_name globally into all templates
 # ------------------------
 @app.context_processor
