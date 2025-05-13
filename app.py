@@ -7,26 +7,26 @@ from io import BytesIO
 import json
 import os
 from dotenv import load_dotenv
+from flask_sqlalchemy import SQLAlchemy
+from config import Config
+db = SQLAlchemy() 
+
 load_dotenv()  
 
-import openai
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
-
+# ────── Flask App Setup ──────
 app = Flask(__name__)
-app.secret_key = 'super_secret_key'  # 🔐 Use env var in production
+app.secret_key = os.environ["FLASK_SECRET_KEY"]  # e.g. set in Render as FLASK_SECRET_KEY
 
-# ------------------------
-# Database Connection
-# ------------------------
+# ────── Database Helper ──────
 def get_db_connection():
     return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="1234",
-        database="conocancer"
+        host     = os.environ["aws-conocancer-db2.c2z0s62si8ab.us-east-1.rds.amazonaws.com"],
+        port     = int(os.environ.get("DB_PORT", 3306)),
+        user     = os.environ["admin"],
+        password = os.environ["SystemsProject25"],
+        database = os.environ["conocancer"],
+        autocommit=True
     )
-
 # ------------------------
 # Inject user_name globally into all templates
 # ------------------------
@@ -645,12 +645,7 @@ def get_support_group_detail(group_id):
 def get_intro_progress():
     user_id = request.args.get("user_id")
 
-    conn = mysql.connector.connect(
-        host='localhost',
-        user='root',
-        password='1234',
-        database='conocancer'
-    )
+    conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
     query = """
@@ -679,7 +674,6 @@ def get_intro_progress():
         "total": 5,
         "percent": percent
     })
-
-
+# ────── Run Server ──────
 if __name__ == "__main__":
     app.run(debug=True)
