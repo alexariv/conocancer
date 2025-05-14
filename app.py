@@ -95,6 +95,7 @@ def signup():
         print("Unexpected error during signup:", e)
         return jsonify({"error": "An unexpected error occurred."}), 500
     
+    
 # ------------------------
 # Login
 # ------------------------
@@ -120,6 +121,48 @@ def login():
     else:
         flash("Invalid login credentials", "error")
         return redirect(url_for("index"))
+    
+# ─── Settings Page Routes ───
+
+# singular
+@app.route("/setting")
+def setting():
+    return render_template("setting.html")
+
+# plural alias: unique function name so endpoint != "setting"
+@app.route("/settings")
+def settings_list():
+    return render_template("setting.html")
+
+
+# ─── User Profile API ───
+
+@app.route("/api/user-profile")
+def api_user_profile():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    conn = get_db_connection()
+    cur  = conn.cursor(dictionary=True)
+
+    cur.execute("""
+      SELECT
+        name,
+        email,
+        preferred_language AS language
+      FROM users
+      WHERE user_id = %s
+    """, (user_id,))
+    user = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    return jsonify(user)
+
 
 # ------------------------
 # Questionnaire Submission
@@ -177,10 +220,6 @@ def videos_and_articles():
 @app.route("/progress")
 def progress():
     return render_template("progress.html")
-
-@app.route("/setting")
-def setting():
-    return render_template("setting.html")
 
 # ------------------------
 # Category Pages
@@ -651,40 +690,60 @@ def get_support_group_detail(group_id):
     grp = next((g for g in groups if g["id"] == group_id), None)
     return jsonify(grp or {"error": "Support group not found"}), 200 if grp else 404
 
-@app.route("/api/introduction_progress")
-def get_intro_progress():
-    user_id = request.args.get("user_id")
+@app.route('/api/introduction_progress')
+def introduction_progress():
+    user_id = request.args.get('user_id')
+
+    if not user_id:
+        return jsonify({"error": "Missing user_id"}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    query = """
-    SELECT 
-      SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed
-    FROM user_progress_VQR
-    WHERE user_id = %s
-      AND (
-        (lesson_type = 'video' AND lesson_id BETWEEN 1 AND 3) OR
-        (lesson_type = 'reading' AND lesson_id = 1) OR
-        (lesson_type = 'quiz' AND lesson_id = 1)
-      )
-    """
-    cursor.execute(query, (user_id,))
-    result = cursor.fetchone()
+    try:
+        CATEGORY_MAP = {
+            "introduction": 1,
+            "diagnosis": 2,
+            "treatment": 3,
+            "survivor": 4
+        }
 
-    completed = result['completed'] or 0
-    percent = round((completed / 5) * 100)
+        progress_data = {}
 
-    cursor.close()
-    conn.close()
+        for category_name, category_id in CATEGORY_MAP.items():
+            # Get total lessons per category from distinct lessons
+            cursor.execute("""
+                SELECT COUNT(DISTINCT lesson_id) AS total
+                FROM user_progressVQR
+                WHERE category_id = %s;
+            """, (category_id,))
+            total_lessons = cursor.fetchone()["total"]
 
-    return jsonify({
-        "category": "introduction",
-        "completed": completed,
-        "total": 5,
-        "percent": percent
-    })
+            # Completed lessons per category for the user
+            cursor.execute("""
+                SELECT COUNT(DISTINCT lesson_id) AS completed
+                FROM user_progressVQR
+                WHERE user_id = %s AND category_id = %s AND status = 'completed';
+            """, (user_id, category_id))
+            completed_lessons = cursor.fetchone()["completed"]
 
+            percent = round((completed_lessons / total_lessons) * 100) if total_lessons else 0
+
+            progress_data[category_name] = {
+                "completed": completed_lessons,
+                "total": total_lessons,
+                "percent": percent
+            }
+
+        return jsonify(progress_data), 200
+
+    except Exception as e:
+        print(f"Database error: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+
+    finally:
+        cursor.close()
+        conn.close()
 
 @app.route("/api/next-upcoming")
 def api_next_upcoming():
@@ -831,8 +890,6 @@ def get_saved_study_answers(category_id):
     cur.close()
     conn.close()
     return jsonify(rows), 200
-
-# at the bottom of your routes:
 
 @app.route("/api/clear_study_answers/<int:category_id>", methods=["POST"])
 def clear_study_answers(category_id):

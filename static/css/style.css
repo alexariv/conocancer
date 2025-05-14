@@ -854,3 +854,55 @@ a:hover {
   border: 1px solid #f5c6cb;
   border-radius: 5px;
 }
+
+.recent-performance {
+  width: 280px;
+  padding: 20px;
+  background-color: #fdfcfc;
+}
+
+.recent-performance h3 {
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+}
+
+.performance-card {
+  background: #f3d8fd; /* Light purple */
+  border-radius: 12px;
+  padding: 15px 20px;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.performance-text strong {
+  font-size: 0.95rem;
+  color: #111;
+}
+
+.performance-text small {
+  display: block;
+  font-size: 0.75rem;
+  color: #444;
+  margin-top: 3px;
+}
+
+.score-badge {
+  padding: 5px 10px;
+  border-radius: 12px;
+  font-weight: bold;
+  font-size: 0.85rem;
+  background: #ffd7e2;
+  color: #d40057;
+}
+
+.score-badge.green {
+  background: #dcfce7;
+  color: #065f46;
+}
+
+.score-badge.blue {
+  background: #dbeafe;
+  color: #1d4ed8;
+}

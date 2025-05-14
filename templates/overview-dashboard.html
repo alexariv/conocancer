@@ -18,7 +18,7 @@
       </div>
       <nav class="sidebar-nav">
         <ul>
-          <li class="active"><a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='imgs/Home.png') }}" alt="Overview Icon" /> <span>Dashboard</span></a></li>
+          <li class="active"><a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='imgs/Home.png') }}" alt="introduction Icon" /> <span>Dashboard</span></a></li>
           <li><a href="{{ url_for('videos_and_articles') }}"><img src="{{ url_for('static', filename='imgs/Folder.png') }}" alt="Videos Icon" /> <span>Videos & Articles</span></a></li>
           <li><a href="{{ url_for('resources') }}"><img src="{{ url_for('static', filename='imgs/Chat.png') }}" alt="Resources Icon" /> <span>Resources</span></a></li>
           <li><a href="{{ url_for('progress') }}"><img src="{{ url_for('static', filename='imgs/Category.png') }}" alt="Progress Icon" /> <span>Progress</span></a></li>
@@ -47,9 +47,9 @@
           <a href="{{ url_for('progress') }}">View All</a>
         </div>
         <div class="courses-grid">
-          <div class="card purple" data-course="overview">
-            <div class="card-title" id="cat-overview-title"><h5>Introduction</h5></div>
-            <small id="cat-overview-small">3 Videos available</small>
+          <div class="card purple" data-course="introduction">
+            <div class="card-title" id="cat-introduction-title"><h5>Introduction</h5></div>
+            <small id="cat-introduction-small">3 Videos available</small>
             <div class="progress-ring" data-progress="0">
               <div class="progress-text">0%</div>
             </div>
@@ -97,56 +97,30 @@
       </section>
     </main>
 
-    <!-- Statistics -->
-    <aside class="stats">
-      <div class="profile-card">
-        <div class="user-info">
-          <span id="user-photo" style="font-size: 20px; display: inline-block; line-height: 1;" aria-label="User">👤</span>
-
-          <div class="user-details">
-            <strong id="profile-name">{{ user_name }}</strong>
-
-            <span id="join-date"></span>
-          </div>
-          <button class="dropdown-toggle" id="dropdownToggle">▼</button>
-        </div>
-        <div class="dropdown-menu" id="dropdownMenu">
-          <ul>
-            <li id="logoutBtn">Log Out</li>
-          </ul>
-        </div>
+   <!-- 👇 Replace this whole <aside class="stats"> block: -->
+<aside class="recent-performance">
+  <div class="profile-card">
+    <!-- user profile section remains the same -->
+    <div class="user-info">
+      <span id="user-photo" aria-label="User">👤</span>
+      <div class="user-details">
+        <strong id="profile-name">{{ user_name }}</strong>
+        <span id="join-date"></span>
       </div>
+      <button class="dropdown-toggle" id="dropdownToggle">▼</button>
+    </div>
+    <div class="dropdown-menu" id="dropdownMenu">
+      <ul>
+        <li id="logoutBtn">Log Out</li>
+      </ul>
+    </div>
+  </div>
 
-      <div class="confirm-modal" id="confirmModal">
-        <div class="confirm-box">
-          <p>Are you sure you want to log out?</p>
-          <div class="confirm-buttons">
-            <button id="confirmYes">Yes</button>
-            <button id="confirmNo">No</button>
-          </div>
-        </div>
-      </div>
-
-      <h3>Statistics</h3>
-      <div class="stat-grid">
-        <div class="stat-box" data-stat="completed">
-          <h4 class="stat-label">Courses Completed</h4>
-          <p><span class="stat-number" id="stat-completed">0</span><span class="stat-line"></span></p>
-        </div>
-        <div class="stat-box" data-stat="watched">
-          <h4 class="stat-label">Videos Watched</h4>
-          <p><span class="stat-number" id="stat-watched">0</span><span class="stat-line"></span></p>
-        </div>
-        <div class="stat-box" data-stat="inProgress">
-          <h4 class="stat-label">Courses In Progress</h4>
-          <p><span class="stat-number" id="stat-in-progress">0</span><span class="stat-line"></span></p>
-        </div>
-        <div class="stat-box" data-stat="quizzes">
-          <h4 class="stat-label">Quizzes Completed</h4>
-          <p><span class="stat-number" id="stat-quizzes">0</span><span class="stat-line"></span></p>
-        </div>
-      </div>
-    </aside>
+  <h3 data-i18n="heading.recent">Recent Performance</h3>
+  <div id="recent-performance-container" class="recent-performance-list">
+    <!-- JS will insert .performance-card elements here -->
+  </div>
+</aside>
   </div>
 
   <!-- Feedback Button -->
@@ -202,28 +176,6 @@
     </ul>
   {% endif %}
 {% endwith %}
-<script>
-  async function fetchUserData() {
-    return {
-      name: "{{ user_name }}",
-     
-      photo: "default-user-icon.png",
-      stats: {
-        completed: 0,
-        watched: 0,
-        inProgress: 0,
-        quizzes: 0
-      },
-      courses: [
-        { id: "overview", percent: 0 },
-        { id: "diagnosis", percent: 0 },
-        { id: "treatment", percent: 0 },
-        { id: "survivor", percent: 0 }
-      ],
-      upcoming: []
-    };
-  }
-  </script>
 
 </body>
 </html>

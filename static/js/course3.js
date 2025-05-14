@@ -13,28 +13,26 @@ document.addEventListener("DOMContentLoaded", () => {
   const lessonTitles = {
     en: {
       video: {
-        1: "SCOA",
-        2: "BRCA",
+        1: "BRCA",
+        2: "SCOA",
       },
       reading: {
-        1: "After Breast Cancer",
-        2: "Breast Density",
+        1: "Breast Cancer Prevention",
       },
       quiz: {
-        1: "Diagnosis",
+        1: "Screening & Detection",
       }
     },
     es: {
-       video: {
-        1: "SCOA",
-        2: "BRCA",
+      video: {
+        1: "BRCA",
+        2: "SCOA",
       },
       reading: {
-        1: "Despues Del Cáncer de Mama",
-        2:"Densidad Mamaria",
+        1: "Prevención del Cáncer de Mama",
       },
       quiz: {
-        1: "Diagnóstico",
+        3: "Cribado & Detección",
       }
     }
   };
@@ -60,32 +58,25 @@ document.addEventListener("DOMContentLoaded", () => {
   updateLanguageButton();
   updateLessonTitles();
 
-    const videoMap = {
+   const videoMap = {
     en: {
-      1: "SCOA_Breast_Cancer_07E.mp4",
-      2: "BRCA_Patient_09E.mp4",
+      1: "BRCA_Patient_09E.mp4",
+      2: "SCOA_Breast_Cancer_07E.mp4"
     },
     es: {
-      1: "SCOA_Breast_Cancer_07S.mp4",
-      2: "BRCA_Patient_09S.mp4",
+      1: "BRCA_Patient_09S",
+      2: "SCOA_Breast_Cancer_07S.mp4"
     }
   };
 
   const readingMap = {
-    en: {
-      1: "BreastDensityE.pdf",
-      2: "after-a-breast-cancer-diagnosis (English).pdf",
-    },
-    es: {
-      1: "BreastDensityS.pdf",
-      2: "after-a-breast-cancer-diagnosis (Spanish).pdf",
-    }
+    en: "Breast Cancer_En.pdf",
+    es: "Breast Cancer_SP.pdf"
   };
  const questionVideoIdMap = {
-   en: { 1: "07E", 2: "09E"},
-   es: { 1: "07S", 2: "09S"}
+   en: { 1: "09E", 2: "07E"},
+   es: { 1: "09S", 2: "07S"}
  };
-
   // =============== VIDEO + EMBEDDED QUESTIONS ===============
   async function loadVideo(id) {
     // 1) fetch saved position
@@ -248,8 +239,8 @@ player.on("pause", () => {
   };
 
   // =============== READING ===============
-  function loadReading() {
-    const pdfURL = `/static/media/${readingMap[currentLanguage]}`;
+  function loadReading(id) {
+  const pdfURL = `/static/${readingMap[currentLanguage]}`;
     readingSection.innerHTML = `
       <h3>${currentLanguage === "en" ? "Reading" : "Lectura"}</h3>
       <iframe src="${pdfURL}" width="100%" height="600" style="border: none;"></iframe>
@@ -655,4 +646,7 @@ loadUserProgress()
     refreshDashboardProgress();
   })
   .catch(err => console.error(err));
+  // after loadUserProgress().then… etc
+const firstLesson = document.querySelector('.lesson-item');
+if (firstLesson) firstLesson.click();
 });
