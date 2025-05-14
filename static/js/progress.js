@@ -13,7 +13,7 @@ const translations = {
       title: "Learning Progress",
       subtitle: "You're making steady progress! Keep going!",
       overall: "Overall Progress",
-      category: "Category Quiz Review",
+      category: "Category Progress",
       recent: "Recent Performance"
     },
     milestones: {
@@ -125,77 +125,37 @@ document.addEventListener("DOMContentLoaded", () => {
 /**
  * 🌐 Fetch personalized progress
  */
+async function fetchUserProgress() {
+  try {
+    const res = await fetch("/api/progress");
+    const data = await res.json();
+    renderProgress(data);
+  } catch (err) {
+    console.error("❌ Failed to load user progress:", err);
+  }
+}
+
 function renderProgress(data) {
-  // Update progress bar
   document.querySelector(".overall-progress .progress-bar").style.width = `${data.overallProgress}%`;
 
-  // Update milestone boxes
   document.querySelectorAll(".metric-box")[0].innerHTML = `
     ${translations[currentLang].milestones.quizzes}<br><strong>${data.totalQuizzes.completed} / ${data.totalQuizzes.total}</strong>`;
   document.querySelectorAll(".metric-box")[1].innerHTML = `
     ${translations[currentLang].milestones.categories}<br><strong>${data.categoriesMastered.completed} / ${data.categoriesMastered.total}</strong>`;
 
-  // Start the review section
   const container = document.querySelector(".category-progress");
-  let categoryHtml = `<h3 data-i18n="heading.category">Category Quiz Review</h3>`;
-
-  // 🔥 Add static "Introduction"
-  categoryHtml += `
-    <div class="category-item">
-      <div class="category-header">
-        <span class="category-name">Introduction</span>
-        <span class="category-grade">95%</span>
-      </div>
-      <button class="toggle-quiz-details" data-target="intro-quiz">▼ View Quiz Details</button>
-      <div class="quiz-details hidden" id="intro-quiz">
-        <p><strong>Quiz Questions</strong></p>
-        <ul class="quiz-questions">
-          <li>Q1: Placeholder question</li>
-          <li>Q2: Placeholder question</li>
-        </ul>
-        <p><strong>📺 Suggested Videos to Review:</strong></p>
-        <ul class="suggested-videos">
-          <li>Coming soon...</li>
-        </ul>
-      </div>
-    </div>`;
-
-  // (Optional) Loop more categories here
-  const dynamicHtml = data.categories.map(cat => {
-    const grade = cat.score !== undefined ? `${cat.score}%` : "N/A";
+  const categoryHtml = data.categories.map(cat => {
+    const percent = Math.round((cat.completed / cat.total) * 100);
     const label = translations[currentLang].items[cat.key] || cat.key;
-    const catId = `cat-${cat.key}`;
+    const showBtn = cat.key === "screening";
     return `
       <div class="category-item">
-        <div class="category-header">
-          <span class="category-name">${label}</span>
-          <span class="category-grade">${grade}</span>
-        </div>
-        <button class="toggle-quiz-details" data-target="${catId}">▼ View Quiz Details</button>
-        <div class="quiz-details hidden" id="${catId}">
-          <p><strong>Quiz Questions</strong></p>
-          <ul class="quiz-questions">
-            <li>Q1: Placeholder question</li>
-            <li>Q2: Placeholder question</li>
-          </ul>
-          <p><strong>📺 Suggested Videos to Review:</strong></p>
-          <ul class="suggested-videos">
-            <li>Coming soon...</li>
-          </ul>
-        </div>
+        <label data-i18n="items.${cat.key}">${label}</label> <span>${cat.completed}/${cat.total} Completed</span>
+        <div class="progress-bar-container"><div class="progress-bar" style="width: ${percent}%"></div></div>
+        ${showBtn ? `<div class="review-wrapper"><button class="review-btn" data-i18n="button.review">${translations[currentLang].button.review}</button></div>` : ""}
       </div>`;
   }).join("");
-
-  categoryHtml += dynamicHtml;
-  container.innerHTML = categoryHtml;
-
-  // Add toggle functionality
-  document.querySelectorAll(".toggle-quiz-details").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const target = document.getElementById(btn.getAttribute("data-target"));
-      target.classList.toggle("hidden");
-    });
-  });
+  container.innerHTML = `<h3 data-i18n="heading.category">${translations[currentLang].heading.category}</h3>` + categoryHtml;
 }
 
 /**
@@ -223,3 +183,69 @@ function renderRecentPerformance(quizzes) {
       </div>`;
   }).join("");
 }
+document.addEventListener("DOMContentLoaded", () => {
+  const container = document.querySelector('.study-quiz-history');
+
+  // Placeholder data; replace with fetch from your backend API
+  const data = [
+    {
+      category: "Introduction",
+      attempts: 2,
+      latest_score: 85,
+      summary: "Great grasp on basics"
+    },
+    {
+      category: "Diagnosis",
+      attempts: 1,
+      latest_score: 70,
+      summary: "Needs more review on symptoms"
+    }
+    // Add more categories as needed
+  ];
+
+  // Inject category items into the container
+  data.forEach(entry => {
+    const categoryItem = document.createElement("div");
+    categoryItem.className = "category-item";
+    categoryItem.innerHTML = `
+      <button class="dropdown-btn">${entry.category} ▼</button>
+      <div class="dropdown-content">
+        <p>Attempts: ${entry.attempts}</p>
+        <p>Latest Score: ${entry.latest_score}%</p>
+        <p><a href="#" class="summary-link" data-summary="${entry.summary}">View Summary</a></p>
+      </div>
+    `;
+    container.appendChild(categoryItem);
+  });
+
+  // Toggle dropdown content visibility
+  container.addEventListener('click', (e) => {
+    if (e.target.classList.contains('dropdown-btn')) {
+      const dropdown = e.target.nextElementSibling;
+      dropdown.classList.toggle('show');
+    }
+  });
+
+  // Show modal with summary details
+  container.addEventListener("click", (e) => {
+    if (e.target.classList.contains("summary-link")) {
+      e.preventDefault();
+      const summaryText = e.target.dataset.summary;
+      document.getElementById("summaryDetails").textContent = summaryText;
+      document.getElementById("summaryModal").style.display = "block";
+    }
+  });
+
+  // Close modal when 'x' is clicked
+  document.querySelector(".modal .close").addEventListener("click", () => {
+    document.getElementById("summaryModal").style.display = "none";
+  });
+
+  // Close modal when clicking outside the modal content
+  window.addEventListener("click", (e) => {
+    const modal = document.getElementById("summaryModal");
+    if (e.target === modal) {
+      modal.style.display = "none";
+    }
+  });
+});

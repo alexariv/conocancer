@@ -61,7 +61,7 @@ def signup():
     confirm_password = request.form.get("confirmPassword")
 
     if password != confirm_password:
-        return {"error": "Passwords do not match"}, 400
+        return jsonify({"error": "Passwords do not match"}), 400
 
     password_hash = hashlib.sha256(password.encode()).hexdigest()
 
@@ -73,21 +73,26 @@ def signup():
             VALUES (%s, %s, %s, %s)
         """, (name, email, password_hash, "English"))
         conn.commit()
+
+        # Retrieve the user_id of the newly created user
+        cursor.execute("SELECT user_id FROM users WHERE email = %s", (email,))
+        user_id = cursor.fetchone()[0]
+
         cursor.close()
         conn.close()
 
-        print("User signup successful:", email)  # ✅ Optional debug line
-        session["user_email"] = email
+        # Set session variables
+        session["user_id"] = user_id
+        session["user_name"] = name
 
-        return {"success": True}, 200
+        return jsonify({"success": True, "redirect": "/dashboard"}), 200
 
     except mysql.connector.IntegrityError:
-        return {"error": "That email already exists."}, 400
+        return jsonify({"error": "That email already exists."}), 400
 
     except Exception as e:
         print("Unexpected error during signup:", e)
-        return {"error": "An unexpected error occurred."}, 500
-
+        return jsonify({"error": "An unexpected error occurred."}), 500
 
 
 # ------------------------
@@ -679,6 +684,86 @@ def get_intro_progress():
         "total": 5,
         "percent": percent
     })
+
+
+@app.route("/api/next-upcoming")
+def api_next_upcoming():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify([])
+
+    category_order = ["overview", "diagnosis", "treatment", "survivor"]
+   
+    conn = get_db_connection()
+    cur = conn.cursor(dictionary=True)
+
+    for category in category_order:
+        cur.execute("""
+            SELECT lesson_id, title, duration
+            FROM videos
+            WHERE category = %s
+            ORDER BY lesson_id ASC
+        """, (category,))
+        all_videos = cur.fetchall()
+
+        for video in all_videos:
+            cur.execute("""
+                SELECT status FROM user_progress_VQR
+                WHERE user_id = %s AND lesson_type = 'video' AND lesson_id = %s
+            """, (user_id, video["lesson_id"]))
+            result = cur.fetchone()
+
+            if not result or result["status"] != "completed":
+                return jsonify([{
+                    "title": video["title"],
+                    "duration": f"{video['duration']} min",
+                    "icon": "/static/imgs/video-icon.png",
+                    "category": category
+                }])
+
+    cur.close()
+    conn.close()
+    return jsonify([]) 
+
+#----------
+#password reset.
+#---------
+@app.route("/request-reset", methods=["POST"])
+def request_reset():
+    email = request.json.get("email")
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+    user = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if not user:
+        return jsonify(success=False, error="Email not found"), 404
+
+    session["reset_email"] = email
+    return jsonify(success=True)
+
+
+@app.route("/reset-password", methods=["POST"])
+def reset_password():
+    email = session.get("reset_email")
+    new_password = request.json.get("newPassword")
+
+    if not email or not new_password:
+        return jsonify(success=False), 400
+
+    password_hash = hashlib.sha256(new_password.encode()).hexdigest()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET password_hash = %s WHERE email = %s", (password_hash, email))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    session.pop("reset_email", None)
+    return jsonify(success=True) 
+
 # ────── Run Server ──────
 if __name__ == "__main__":
     app.run(debug=True)

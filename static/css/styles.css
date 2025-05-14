@@ -803,3 +803,19 @@ button {
   pointer-events: none;
   transition: all 0.5s ease;
 }
+
+.modal-content {
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translate(-50%);
+  background: white;
+  border: 2px solid #78297C;
+  border-radius: 10px;
+  padding: 30px;
+  width: 90%;
+  max-width: 400px;
+  z-index: 3000;
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
+}
+

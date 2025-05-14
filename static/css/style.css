@@ -220,17 +220,17 @@ body.fade-out {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden; /* prevent text from spilling */
 }
 
 .progress-ring::before {
   content: '';
   width: 42px;
   height: 42px;
-  background: #a084dc; /* match card background or use transparent */
+  background: #a084dc; /* fallback color */
   border-radius: 50%;
   position: absolute;
   z-index: 1;
-
 }
 .card.green .progress-ring::before {
   background: #70c27a;
@@ -251,6 +251,11 @@ body.fade-out {
   font-size: 13px;
   font-weight: bold;
   color: white;
+  text-align: center;
+  white-space: nowrap;
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 
@@ -303,6 +308,23 @@ body.fade-out {
   width: 20px;
   height: 20px;
 }
+.icon-box.blue {
+  background-color: #369FFF;
+}
+
+.icon-box.green {
+  background-color: #8AC53E;
+}
+
+.icon-box.orange {
+  background-color: #F5CFAC;
+}
+
+.icon-box.purple {
+  background-color: #f3e8ff;
+}
+
+
 
 /* Details */
 .video-details {

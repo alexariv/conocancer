@@ -6,12 +6,9 @@
   <title>ConoCancer Dashboard</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}" />
+   
 </head>
-<body
-  data-username="{{ user_name }}"
-  data-user-id="{{ user_id }}"
->
-
+<body data-username="{{ user_name }}">
 
   <div class="container">
     <!-- Sidebar -->
@@ -47,14 +44,14 @@
       <section class="courses-section">
         <div class="section-header">
           <h2>Categories</h2>
-          <a href="#">View All</a>
+          <a href="{{ url_for('progress') }}">View All</a>
         </div>
         <div class="courses-grid">
-          <div class="card purple" data-course="introduction">
+          <div class="card purple" data-course="overview">
             <div class="card-title" id="cat-overview-title"><h5>Introduction</h5></div>
             <small id="cat-overview-small">3 Videos available</small>
-             <div class="progress-ring">
-                <span class="progress-text">0%</span>
+            <div class="progress-ring" data-progress="0">
+              <div class="progress-text">0%</div>
             </div>
           </div>
 
@@ -87,10 +84,10 @@
       <!-- Videos Section -->
       <section class="videos-section">
         <div class="section-header">
-          <h2>Category Recommendation</h2>
-          <a href="#">View All</a>
+          <h2>Upcoming Videos & Quizzes</h2>
+          <a href="{{ url_for('videos_and_articles') }}">View All</a>
           <div class="date">
-            <img src="{{ url_for('static', filename='imgs/vs_calendar-alt.png') }}" alt="Calendar" class="calendar-icon" />
+           
             <span id="video-date">–</span>
           </div>
         </div>
@@ -105,10 +102,11 @@
       <div class="profile-card">
         <div class="user-info">
           <span id="user-photo" style="font-size: 20px; display: inline-block; line-height: 1;" aria-label="User">👤</span>
+
           <div class="user-details">
             <strong id="profile-name">{{ user_name }}</strong>
 
-            <span id="join-date">Member since May 2025</span>
+            <span id="join-date"></span>
           </div>
           <button class="dropdown-toggle" id="dropdownToggle">▼</button>
         </div>
@@ -204,25 +202,28 @@
     </ul>
   {% endif %}
 {% endwith %}
-
-  <div id="category‐introduction" class="category‐card">
-  <h2>Introduction</h2>
-  <p>3 Videos available</p>
-  <div class="progress‐ring">
-    <svg width="100" height="100">
-      <circle
-        class="progress‐ring__circle"
-        stroke="rgba(255,255,255,0.4)"
-        stroke‐width="8"
-        fill="transparent"
-        r="45"
-        cx="50"
-        cy="50"/>
-    </svg>
-    <div class="progress‐ring__text">0%</div>
-  </div>
-</div>
-
+<script>
+  async function fetchUserData() {
+    return {
+      name: "{{ user_name }}",
+     
+      photo: "default-user-icon.png",
+      stats: {
+        completed: 0,
+        watched: 0,
+        inProgress: 0,
+        quizzes: 0
+      },
+      courses: [
+        { id: "overview", percent: 0 },
+        { id: "diagnosis", percent: 0 },
+        { id: "treatment", percent: 0 },
+        { id: "survivor", percent: 0 }
+      ],
+      upcoming: []
+    };
+  }
+  </script>
 
 </body>
 </html>

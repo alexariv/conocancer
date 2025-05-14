@@ -10,8 +10,6 @@ async function fetchUserData() {
 
   return {
     name: userName,
-    joinDate: "Apr 2025",
-    photo: "default-user-icon.png",
     stats: {
       completed: data.completed,
       watched: data.completed,
@@ -36,7 +34,7 @@ const translations = {
     welcome: "Hello",
     memberSince: "Member since",
     categories: "Categories",
-    upcoming: "Category Recommendation",
+    upcoming: "Upcoming Videos",
     statistics: "Statistics",
     viewAll: "View All",
     noUpcoming: "Check the progress page for video recommendations!",
@@ -70,7 +68,7 @@ const translations = {
     welcome: "¡Hola",
     memberSince: "Miembro desde",
     categories: "Categorías",
-    upcoming: "Próximos Videos y Cuestionarios",
+    upcoming: "Próximos Videos",
     statistics: "Estadísticas",
     viewAll: "Ver Todo",
     noUpcoming: "No hay contenido próximo. ¡Comienza un curso para recibir recomendaciones!",
@@ -247,7 +245,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("Error loading dashboard:", error);
   }
 });
-//user profile log in and out 
+//user profile log in and out
 document.addEventListener("DOMContentLoaded", () => {
   const dropdownToggle = document.getElementById("dropdownToggle");
   const dropdownMenu = document.getElementById("dropdownMenu");
@@ -284,14 +282,99 @@ document.addEventListener("DOMContentLoaded", () => {
     dropdownMenu.style.display = "none";
   });
 });
+// this is for the uocoming videos-quizzes rn its harding coding it
+async function fetchUserData() {
+  return {
+    name: document.body.dataset.username,
+    photo: "default-user-icon.png",
+    stats: {
+      completed: 0,
+      watched: 0,
+      inProgress: 0,
+      quizzes: 0
+    },
+    courses: [
+      { id: "overview", percent: 0 },
+      { id: "diagnosis", percent: 0 },
+      { id: "treatment", percent: 0 },
+      { id: "survivor", percent: 0 }
+    ],
+    upcoming: [
+      {
+        title: "Video: Breast Cancer Awareness",
+        duration: "2 min",
+        icon: "/static/imgs/play1.png",
+        colorClass: "blue",
+        category: "overview"
+      },
+      {
+        title: "Video: Breast Self-Exam",
+        duration: "3 min",
+        icon: "/static/imgs/play1.png",
+        colorClass: "blue",
+        category: "overview",
+      },
+      {
+        title: "Video: Mammography Myth vs. Fact",
+        duration: "3 min",
+        icon: "/static/imgs/play1.png",
+        colorClass: "blue",
+        category: "overview",
+      },
+     
+    ]
+  };
+}
 
 
-document.addEventListener("DOMContentLoaded", function () {
-  const menuToggle = document.getElementById('menuToggle');
-  const sidebar = document.querySelector('.sidebar');
+function updateUpcomingVideos(user, lang = "en") {
+  const list = document.getElementById("video-list");
+  list.innerHTML = "";
 
-  menuToggle.addEventListener('click', function () {
-    sidebar.classList.toggle('active');
+  if (!user.upcoming.length) {
+    list.innerHTML = `<p>${translations[lang].noUpcoming}</p>`;
+    return;
+  }
+
+  user.upcoming.forEach(item => {
+    const div = document.createElement("div");
+    div.className = "video-card";
+    div.style.cursor = "pointer";
+
+    div.innerHTML = `
+      <div class="icon-box ${item.colorClass}">
+        <img src="${item.icon}" alt="icon" width="20" height="20" />
+      </div>
+      <div class="video-details">
+        <div class="video-title">${item.title}</div>
+        <div class="video-time">${item.duration}</div>
+      </div>
+      <div class="menu-icon">⋮</div>
+    `;
+
+    div.addEventListener("click", () => {
+      const routeMap = {
+        overview: "/introduction",
+        diagnosis: "/diagnosis",
+        treatment: "/treatment",
+        survivor: "/survivorship"
+      };
+      window.location.href = routeMap[item.category] || "/videos-and-articles";
+    });
+
+    list.appendChild(div);
   });
-});
 
+  const today = new Date().toLocaleDateString(undefined, {
+    year: "numeric", month: "long", day: "numeric"
+  });
+  document.getElementById("video-date").textContent = today;
+}
+
+
+
+  // 👇 Show today's date
+  const today = new Date().toLocaleDateString(undefined, {
+    year: "numeric", month: "long", day: "numeric"
+  });
+  document.getElementById("video-date").textContent = today;

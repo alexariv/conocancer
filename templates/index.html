@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Conocancer</title>
+  <title>Landing Page</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}"/>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
 
@@ -63,7 +63,7 @@
 
     </div>
     <div class="features-buttons">
-      
+     
       <button class="btn-outline" onclick="openLearnMore()">Learn More</button>
              
      <button class="btn-filled" onclick="openSignup()">Sign Up</button>
@@ -197,7 +197,7 @@
 
 
 
-  
+ 
 
 
   <!-- Image & Text Section -->
@@ -236,13 +236,15 @@
         Bilingual Breast Cancer Tutoring site
       </p>
     </div>
-    
+   
 
     <div class="footer-contact">
       <h4>CONTACT</h4>
-      <p>conocancer@gmail.com</p>
+      <p><a href="mailto:conocancer@gmail.com" style="text-decoration: none; color: inherit;">conocancer@gmail.com</a></p>
+
+
       <hr />
-      
+     
     </div>
 
     <div class="footer-links-section">
@@ -250,7 +252,7 @@
         <li><a href="#faq-section">FAQ</a></li>
         <li><a href="#features">Core Benefits</a></li>
        
-        
+       
       </ul>
     </div>
   </div>
@@ -306,6 +308,10 @@
 
   <input type="email" id="loginEmail" name="loginEmail" placeholder="Email Address" required />
   <input type="password" id="loginPassword" name="loginPassword" placeholder="Password" required />
+  <p style="text-align: right; margin-top: -10px; margin-bottom: 15px;">
+    <a href="#" onclick="openForgotPassword()" style="color: #78297C; font-weight: bold;">Forgot your password?</a>
+  </p>
+ 
   <button type="submit" class="submit-btn">Log In</button>
   <p class="login-text">
     Create an account?
@@ -401,6 +407,24 @@
     <button type="submit" class="btn-filled" style="margin-top: 10px;">Continue</button>
   </form>
 </div>
+<!-- 🔒 Forgot Password Modal -->
+<div id="forgotPasswordModal" class="modal-content" style="display:none;">
+  <span class="close-button" onclick="closeForgotPassword()" style="float:right;cursor:pointer;font-size:24px;">&times;</span>
+  <h2>Reset Your Password</h2>
+  <p>Enter your email to receive reset instructions:</p>
+  <input type="email" id="resetEmail" placeholder="Enter your email" required style="width: 100%; padding: 10px; margin-bottom: 10px;">
+  <button class="btn-filled" onclick="sendResetEmail()">Submit</button>
+</div>
+
+<!-- 🔐 New Password Modal -->
+<div id="newPasswordModal" class="modal-content" style="display:none;">
+  <span class="close-button" onclick="closeNewPassword()" style="float:right;cursor:pointer;font-size:24px;">&times;</span>
+  <h2>Set a New Password</h2>
+  <input type="password" id="newPass" placeholder="New Password" style="width:100%;padding:10px;margin-bottom:10px;">
+  <input type="password" id="confirmNewPass" placeholder="Confirm Password" style="width:100%;padding:10px;margin-bottom:10px;">
+  <button class="btn-filled" onclick="submitNewPassword()">Reset Password</button>
+</div>
+
 
 
 
@@ -409,24 +433,24 @@
     // ============================
     // 📥 SIGNUP / LOGIN / REDIRECT HANDLER
     // ============================
-    
+   
     function openSignup() {
         document.getElementById('signupModal').classList.add('show');
         document.getElementById('signupModal').style.display = 'flex';
         document.getElementById('overlay').style.display = 'block';
     }
-    
+   
     function closeSignup() {
         document.getElementById('signupModal').classList.remove('show');
         document.getElementById('signupModal').style.display = 'none';
         document.getElementById('overlay').style.display = 'none';
     }
-    
+   
     function openLogin() {
         openSignup();
         showLogin();
     }
-    
+   
     function showLogin() {
         document.getElementById("signupForm").style.display = "none";
         document.getElementById("loginForm").style.display = "block";
@@ -434,7 +458,7 @@
         document.getElementById("loginTab").classList.add("active");
         document.getElementById("modalTitle").textContent = "Welcome Back";
     }
-    
+   
     function showSignup() {
         document.getElementById("signupForm").style.display = "block";
         document.getElementById("loginForm").style.display = "none";
@@ -442,11 +466,11 @@
         document.getElementById("loginTab").classList.remove("active");
         document.getElementById("modalTitle").textContent = "Create an Account";
     }
-    
+   
     // ============================
     // 📋 QUESTIONNAIRE POPUP
     // ============================
-    
+   
     function openQuestionnaire() {
     const modal = document.getElementById('questionnaireModal');
     document.getElementById('questionnaireOverlay').style.display = 'block';
@@ -456,7 +480,7 @@
     modal.style.display = 'flex';
 }
 
-    
+   
 function closeQuestionnaire() {
     const modal = document.getElementById('questionnaireModal');
     document.getElementById('questionnaireOverlay').style.display = 'none';
@@ -466,7 +490,7 @@ function closeQuestionnaire() {
     modal.style.display = 'none';
 }
 
-    
+   
     // ============================
     // 🧠 SIGNUP TRANSITION TO QUESTIONNAIRE
     // ============================
@@ -480,8 +504,8 @@ function closeQuestionnaire() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            closeSignup();
-            setTimeout(openQuestionnaire, 300);
+            closeSignup();  // Ensure this function hides the signup modal
+            window.location.href = data.redirect;
         } else {
             alert(data.error || "Signup failed.");
         }
@@ -492,29 +516,29 @@ function closeQuestionnaire() {
     });
 });
 
-    
-    
+   
+   
     // ============================
     // 🧠 QUESTIONNAIRE SUBMISSION to Flask
     // ============================
-    
+   
     document.getElementById("questionnaireForm").addEventListener("submit", function(event) {
         event.preventDefault();
-    
+   
         const formData = new FormData();
         const language = document.querySelector('input[name="language"]:checked');
         const interest = document.querySelector('select[name="interest"]').value;
         const learn = document.querySelector('select[name="learn"]').value;
-    
+   
         if (!language) {
             alert('Please select your preferred language!');
             return;
         }
-    
+   
         formData.append("language", language.value);
         formData.append("interest", interest);
         formData.append("learn", learn);
-    
+   
         fetch("/submit_questionnaire", {
             method: "POST",
             body: formData
@@ -528,11 +552,11 @@ function closeQuestionnaire() {
             }
         });
     });
-    
+   
     // ============================
     // 🧾 FAQ Dropdown
     // ============================
-    
+   
     function showDropdownAnswer(key) {
         const answers = {
             q1: "This platform is specially designed for breast cancer patients seeking bilingual education, resources, and community support.",
@@ -543,61 +567,122 @@ function closeQuestionnaire() {
         };
         document.getElementById('faq-answer-box').textContent = answers[key] || '';
     }
-    
+   
     // ============================
     // 🎞️ Learn More Modal
     // ============================
-    
+   
     function openLearnMore() {
         document.getElementById('learnMoreOverlay').style.display = 'block';
         document.getElementById('learnMoreModal').style.display = 'block';
         currentSlide = 0;
         updateCarousel();
     }
-    
+   
     function closeLearnMore() {
         document.getElementById('learnMoreOverlay').style.display = 'none';
         document.getElementById('learnMoreModal').style.display = 'none';
     }
-    
+   
     // ============================
     // ⬅️➡️ Carousel Controls
     // ============================
-    
+   
     let currentSlide = 0;
     const carousel = document.getElementById('carousel');
     const totalSlides = 3;
-    
+   
     document.getElementById('prevBtn').addEventListener('click', () => {
         currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
         updateCarousel();
     });
-    
+   
     document.getElementById('nextBtn').addEventListener('click', () => {
         currentSlide = (currentSlide + 1) % totalSlides;
         updateCarousel();
     });
-    
+   
     function updateCarousel() {
         carousel.style.transform = `translateX(-${currentSlide * (100 / totalSlides)}%)`;
     }
-    
+   
     // ============================
     // 🖱️ Global Click Outside Modals
     // ============================
-    
+   
     window.onclick = function (event) {
         const signupModal = document.getElementById('signupModal');
         const overlay = document.getElementById('overlay');
         const learnMoreOverlay = document.getElementById('learnMoreOverlay');
-    
+   
         if (event.target === overlay) closeSignup();
         if (event.target === learnMoreOverlay) closeLearnMore();
     };
-    
+    function openForgotPassword() {
+  document.getElementById("forgotPasswordModal").style.display = "block";
+}
+
+function closeForgotPassword() {
+  document.getElementById("forgotPasswordModal").style.display = "none";
+}
+
+function openNewPassword() {
+  document.getElementById("newPasswordModal").style.display = "block";
+}
+
+function closeNewPassword() {
+  document.getElementById("newPasswordModal").style.display = "none";
+}
+
+function sendResetEmail() {
+  const email = document.getElementById("resetEmail").value;
+
+  fetch("/request-reset", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      closeForgotPassword();
+      openNewPassword(); // simulate code match success
+    } else {
+      alert(data.error || "User not found.");
+    }
+  });
+}
+
+function submitNewPassword() {
+  const pass1 = document.getElementById("newPass").value;
+  const pass2 = document.getElementById("confirmNewPass").value;
+
+  if (pass1 !== pass2) {
+    alert("Passwords do not match!");
+    return;
+  }
+
+  fetch("/reset-password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ newPassword: pass1 })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert("Password updated!");
+      closeNewPassword();
+    } else {
+      alert("Error updating password.");
+    }
+  });
+}
+
+   
     </script>
-    
-    {% if show_questionnaire %}
+   
+<!--
+{% if show_questionnaire %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     closeSignup();
@@ -605,9 +690,11 @@ function closeQuestionnaire() {
   });
 </script>
 {% endif %}
+-->
 
-    
-    
+
+   
+   
 
 </body>
 </html>
