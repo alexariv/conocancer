@@ -229,9 +229,14 @@ def progress():
 def introduction():
     return render_template("introduction.html")
 
-@app.route("/screening-detection")
+@app.route('/screening-detection')
 def screening_detection():
-    return render_template("screening-detection.html")
+    try:
+        return render_template('Screening-Detection.html')
+    except Exception as e:
+        import traceback; traceback.print_exc()   # goes to your server logs
+        return f"<h2>Page Error:</h2><pre>{e}</pre>", 500
+
 
 @app.route("/diagnosis")
 def diagnosis():
