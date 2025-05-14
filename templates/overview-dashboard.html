@@ -123,46 +123,59 @@
 </aside>
   </div>
 
-  <!-- Feedback Button -->
-  <button id="feedback-btn" class="feedback-fab">💬 Feedback</button>
+ <!-- Feedback Button -->
+    <!-- Feedback Section Inline -->
+<button id="feedback-btn" class="feedback-fab">💬 Feedback</button>
 
-  <!-- Feedback Modal -->
-  <div id="feedback-modal" class="modal hidden">
-    <div class="modal-content">
-      <button class="close-modal">&times;</button>
-      <h2>Feedback Form</h2>
-      <p class="modal-subtitle">We'd love to hear from you! Your feedback helps us improve the experience for everyone.</p>
-      <form id="feedback-form">
-        <div class="form-group">
-          <p><strong>How is your experience using the site?</strong></p>
-          <div class="rating-options">
-            <label><input type="radio" name="experience" value="Not great"> Not great</label>
-            <label><input type="radio" name="experience" value="Okay"> Okay</label>
-            <label><input type="radio" name="experience" value="Good"> Good</label>
-            <label><input type="radio" name="experience" value="Great"> Great</label>
-          </div>
-        </div>
-        <div class="form-group">
-          <p><strong>Did you experience any problems?</strong></p>
-          <div id="problem-options">
-            <label><input type="checkbox" name="problem" value="Audio did not play"> Audio did not play</label>
-            <label><input type="checkbox" name="problem" value="The video didn’t load"> The video didn’t load</label>
-            <label><input type="checkbox" name="problem" value="Transcription issue"> The studio didn’t transcribe my voice correctly</label>
-            <label><input type="checkbox" name="problem" value="Language switch issue"> The language didn’t switch properly</label>
-            <label><input type="checkbox" name="problem" value="Confusing content"> Something was confusing</label>
-            <label><input type="checkbox" name="problem" value="Other"> Other</label>
-          </div>
-          <textarea placeholder="The video..." name="problem-detail"></textarea>
-        </div>
-        <div class="form-group">
-          <p><strong>Anything else you’d like to share?</strong></p>
-          <textarea name="additional-feedback" placeholder="It was hard to understand one of the quiz questions..."></textarea>
-        </div>
-        <button type="submit" class="submit-btn">Send Feedback</button>
-      </form>
-      <p class="thank-you">We appreciate your time—thank you for helping us improve!</p>
+<div id="feedback-modal" class="modal hidden">
+  <div class="modal-content">
+    <button class="close-modal">&times;</button>
+    <h2 data-i18n="formTitle">Feedback Form</h2>
+    <p class="modal-subtitle" data-i18n="formSubtitle">We'd love to hear from you! Your feedback helps us improve the experience for everyone.</p>
+
+    <!-- Language Toggle -->
+    <div class="language-toggle">
+      <label class="switch">
+        <input type="checkbox" id="language-switch">
+        <span class="slider round"></span>
+      </label>
+      <span id="language-label">EN</span>
     </div>
+
+    <form id="feedback-form">
+      <div class="form-group">
+        <p><strong data-i18n="experienceQuestion">How is your experience using the site?</strong></p>
+        <div class="rating-options">
+          <label><input type="radio" name="experience" value="Not great"> <span data-i18n="notGreat">Not great</span></label>
+          <label><input type="radio" name="experience" value="Okay"> <span data-i18n="okay">Okay</span></label>
+          <label><input type="radio" name="experience" value="Good"> <span data-i18n="good">Good</span></label>
+          <label><input type="radio" name="experience" value="Great"> <span data-i18n="great">Great</span></label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <p><strong data-i18n="problemsQuestion">Did you experience any problems?</strong></p>
+        <div id="problem-options">
+          <label><input type="checkbox" name="problem" value="Audio did not play"> <span data-i18n="audioIssue">Audio did not play</span></label>
+          <label><input type="checkbox" name="problem" value="The video didn’t load"> <span data-i18n="videoIssue">The video didn’t load</span></label>
+          <label><input type="checkbox" name="problem" value="Transcription issue"> <span data-i18n="transcriptionIssue">The studio didn’t transcribe my voice correctly</span></label>
+          <label><input type="checkbox" name="problem" value="Language switch issue"> <span data-i18n="languageSwitchIssue">The language didn’t switch properly</span></label>
+          <label><input type="checkbox" name="problem" value="Confusing content"> <span data-i18n="confusingContent">Something was confusing</span></label>
+          <label><input type="checkbox" name="problem" value="Other"> <span data-i18n="other">Other</span></label>
+        </div>
+        <textarea placeholder="The video..." name="problem-detail" data-i18n-placeholder="problemDetailPlaceholder"></textarea>
+      </div>
+
+      <div class="form-group">
+        <p><strong data-i18n="additionalFeedback">Anything else you’d like to share?</strong></p>
+        <textarea name="additional-feedback" placeholder="It was hard to understand one of the quiz questions..." data-i18n-placeholder="additionalFeedbackPlaceholder"></textarea>
+      </div>
+
+      <button type="submit" class="submit-btn" data-i18n="sendFeedback">Send Feedback</button>
+    </form>
+    <p class="thank-you" data-i18n="thankYou">We appreciate your time—thank you for helping us improve!</p>
   </div>
+</div>
 
   <!-- 📦 Load JS -->
   <script src="{{ url_for('static', filename='js/dashboard.js') }}" defer></script>

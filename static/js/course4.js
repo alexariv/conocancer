@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
         2: "Surgery",
       },
       quiz: {
-        1: "Treatment",
+        4: "Treatment",
       }
     },
     es: {
@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
         2: "Cirugías"
       },
       quiz: {
-        1: "Tratamiento",
+        4: "Tratamiento",
       }
     }
   };

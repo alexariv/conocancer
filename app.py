@@ -53,13 +53,15 @@ def index():
 # ------------------------
 # Signup
 # ------------------------
+# ------------------------
+# Signup
+# ------------------------
 @app.route("/signup", methods=["POST"])
 def signup():
     name = request.form.get("name")
     email = request.form.get("email")
     password = request.form.get("password")
     confirm_password = request.form.get("confirmPassword")
-    preferred_language = request.form.get("preferred_language", "English")  # ✅ retrieve selected lang
 
     if password != confirm_password:
         return jsonify({"error": "Passwords do not match"}), 400
@@ -72,7 +74,7 @@ def signup():
         cursor.execute("""
             INSERT INTO users (name, email, password_hash, preferred_language)
             VALUES (%s, %s, %s, %s)
-        """, (name, email, password_hash, preferred_language))  # ✅ use selected lang
+        """, (name, email, password_hash, "English"))
         conn.commit()
 
         # Retrieve the user_id of the newly created user
@@ -94,7 +96,6 @@ def signup():
     except Exception as e:
         print("Unexpected error during signup:", e)
         return jsonify({"error": "An unexpected error occurred."}), 500
-    
     
 # ------------------------
 # Login
@@ -1048,6 +1049,49 @@ def api_recent_quizzes():
     cur.close()
     conn.close()
     return jsonify(output)
+
+@app.route("/api/change-password", methods=["POST"])
+def change_password():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    data = request.get_json()
+    current_password = data.get("currentPassword")
+    new_password     = data.get("newPassword")
+    confirm_password = data.get("confirmPassword")
+
+    if not current_password or not new_password or not confirm_password:
+        return jsonify({"error": "Missing required fields"}), 400
+
+    if new_password != confirm_password:
+        return jsonify({"error": "New password and confirmation do not match"}), 400
+
+    conn = get_db_connection()
+    cur = conn.cursor(dictionary=True)
+
+    # Fetch current password hash from DB
+    cur.execute("SELECT password_hash FROM users WHERE user_id = %s", (user_id,))
+    row = cur.fetchone()
+    if not row:
+        cur.close()
+        conn.close()
+        return jsonify({"error": "User not found"}), 404
+
+    current_hash = hashlib.sha256(current_password.encode()).hexdigest()
+    if current_hash != row["password_hash"]:
+        cur.close()
+        conn.close()
+        return jsonify({"error": "Current password is incorrect"}), 403
+
+    # Update password
+    new_hash = hashlib.sha256(new_password.encode()).hexdigest()
+    cur.execute("UPDATE users SET password_hash = %s WHERE user_id = %s", (new_hash, user_id))
+    conn.commit()
+
+    cur.close()
+    conn.close()
+    return jsonify({"success": True, "message": "Password updated successfully"})
 
 # ────── Run Server ──────
 if __name__ == "__main__":

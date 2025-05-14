@@ -18,10 +18,10 @@ document.addEventListener("DOMContentLoaded", () => {
         3: "Breast Screening",
       },
       reading: {
-        1: "Breast Cancer Prevention",
+        2: "Breast Cancer Prevention",
       },
       quiz: {
-        1: "Screening & Detection",
+        2: "Screening & Detection",
       }
     },
     es: {
@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
         1: "Prevención del Cáncer de Mama",
       },
       quiz: {
-        1: "Cribado & Detección",
+        2: "Cribado & Detección",
       }
     }
   };
@@ -74,9 +74,20 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const readingMap = {
-    en: "static\media\Breast-Cancer-Prevention-English-and-Spanish-Digital.pdf",
-    es: "static\media\Breast-Cancer-Prevention-English-and-Spanish-Digital.pdf"
+    en: "Breast-Cancer-Prevention-English-and-Spanish-Digital.pdf",
+    es: "Breast-Cancer-Prevention-English-and-Spanish-Digital.pdf"
   };
+  function loadReading() {
+  const pdfURL = "/static/media/Breast-Cancer-Prevention-English-and-Spanish-Digital.pdf";
+  readingSection.innerHTML = `
+    <h3>${currentLanguage === "en" ? "Reading" : "Lectura"}</h3>
+    <iframe src="${pdfURL}" width="100%" height="600" style="border: none;"></iframe>
+    <button id="markAsReadBtn" class="transcript-btn">
+      ${currentLanguage === "en" ? "Mark as Read" : "Marcar como Leído"}
+    </button>
+  `;
+}
+
  const questionVideoIdMap = {
    en: { 1: "01E", 2: "05E", 3: "10E" },
    es: { 1: "01S", 2: "05S", 3: "10S" }

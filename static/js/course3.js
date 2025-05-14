@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
         1: "Breast Cancer Prevention",
       },
       quiz: {
-        1: "Screening & Detection",
+        3: "Screening & Detection",
       }
     },
     es: {
