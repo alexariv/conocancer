@@ -342,273 +342,47 @@ def api_progress():
 
         conn = get_db_connection()
         cur = conn.cursor()
-        
- # 1) Total quizzes ever and quizzes completed:
-    cur.execute("SELECT COUNT(*) AS total FROM study_questions")
-    total_quizzes = cur.fetchone()["total"]
-    cur.execute("""
-      SELECT COUNT(DISTINCT study_question_id) AS done
-      FROM user_study_progress
-      WHERE user_id=%s
-    """, (user_id,))
-    done_quizzes = cur.fetchone()["done"]
 
-    # 2) Categories mastered = categories where user has 100% on evaluate_study_quiz
-    cur.execute("SELECT DISTINCT category_id FROM study_questions")
-    all_cats = [r["category_id"] for r in cur.fetchall()]
-    mastered = 0
-    for cat in all_cats:
-        # call your existing evaluation logic per category
+        # Check if progress already exists
         cur.execute("""
-          SELECT 
-            SUM(CASE WHEN question_type='Short Response' THEN
-                        CASE WHEN user_answer IS NOT NULL AND LENGTH(user_answer)>0 THEN 2 ELSE 0 END
-                     ELSE 1 END)      AS awarded,
-            SUM(CASE WHEN question_type='Short Response' THEN 2 ELSE 1 END) AS possible
-          FROM study_questions sq
-          LEFT JOIN user_study_progress usp
-            ON usp.study_question_id = sq.study_question_id
-           AND usp.category_id       = sq.category_id
-           AND usp.user_id           = %s
-          WHERE sq.category_id = %s
-        """, (user_id, cat))
-        row = cur.fetchone()
-        # only count as “mastered” if awarded == possible
-        if row["awarded"] == row["possible"]:
-            mastered += 1
+            SELECT * FROM user_progress_VQR
+            WHERE user_id = %s AND lesson_type = %s AND lesson_id = %s
+        """, (user_id, lesson_type, lesson_id))
 
-    # 3) Build per-category breakdown for the little bars
-    categories = []
-    for cat in all_cats:
-        cur.execute("SELECT COUNT(*) AS total FROM study_questions WHERE category_id=%s", (cat,))
-        total = cur.fetchone()["total"]
-        cur.execute("""
-          SELECT COUNT(*) AS done
-          FROM user_study_progress
-          WHERE user_id=%s AND category_id=%s
-        """, (user_id, cat))
-        done  = cur.fetchone()["done"]
-        # key can be a slug or numeric; your JS uses cat.key
-        categories.append({ "key": str(cat), "completed": done, "total": total })
-
-    cur.close()
-    conn.close()
-
-    overall = mastered / len(all_cats) * 100
-
-    return jsonify({
-      "overallProgress": round(overall),
-      "totalQuizzes":    { "completed": done_quizzes, "total": total_quizzes },
-      "categoriesMastered": { "completed": mastered, "total": len(all_cats) },
-      "categories":      categories
-    })
-
-@app.route("/api/recent-quizzes")
-def recent_quizzes():
-    user_id = session.get("user_id")
-    # 1) If not logged in, return an empty list
-    if not user_id:
-        return jsonify([]), 200
-
-    conn = get_db_connection()
-    cur  = conn.cursor(dictionary=True)
-
-    # 2) Pull the last 5 answers + scores
-    cur.execute("""
-      SELECT 
-        usp.category_id,
-        usp.study_question_id,
-        sq.question_type,
-        -- short responses get 2 points if non‐empty
-        CASE 
-          WHEN sq.question_type = 'Short Response' THEN
-            CASE WHEN LENGTH(usp.user_answer) > 0 THEN 2 ELSE 0 END
-          ELSE
-            -- for MC/T&F, join to options to read is_correct (0 or 1)
-            COALESCE(spo.is_correct, 0)
-        END AS raw_score,
-        -- define the max possible
-        CASE 
-          WHEN sq.question_type = 'Short Response' THEN 2
-          ELSE 1
-        END AS max_score
-      FROM user_study_progress usp
-      JOIN study_questions sq
-        ON sq.category_id       = usp.category_id
-       AND sq.study_question_id = usp.study_question_id
-      LEFT JOIN study_question_options spo
-        ON spo.category_id       = usp.category_id
-       AND spo.study_question_id = usp.study_question_id
-       AND spo.option_text       = usp.user_answer
-      WHERE usp.user_id = %s
-      ORDER BY usp.time_answered DESC
-      LIMIT 5
-    """, (user_id,))
-
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-
-    # 3) Map category IDs to names
-    CATEGORY_NAMES = {
-        1: "Introduction", 
-        2: "Screening", 
-        3: "Diagnosis",
-        4: "Treatment",
-        5: "Survivorship"
-    }
-
-    # 4) Build the JSON payload
-    quizzes = []
-    for r in rows:
-        # avoid division‐by‐zero
-        if r["max_score"] > 0:
-            pct = round(r["raw_score"] / r["max_score"] * 100)
+        if cur.fetchone():
+            # Update existing record → FIXED THIS LINE TO use status column
+            cur.execute("""
+                UPDATE user_progress_VQR SET status = %s WHERE user_id = %s AND lesson_type = %s AND lesson_id = %s
+            """, (status, user_id, lesson_type, lesson_id))
         else:
-            pct = 0
+            # Insert new record → FIXED THIS LINE to insert into status column
+            cur.execute("""
+                INSERT INTO user_progress_VQR (user_id, lesson_type, lesson_id, status)
+                VALUES (%s, %s, %s, %s)
+            """, (user_id, lesson_type, lesson_id, status))
 
-        quizzes.append({
-            "title":    f"Quiz {r['study_question_id']}",
-            "category": CATEGORY_NAMES.get(r["category_id"], f"Cat {r['category_id']}"),
-            "score":    pct
-        })
+        conn.commit()
+        cur.close()
+        conn.close()
 
-    # 5) **Always** return something
-    return jsonify(quizzes), 200
+        return jsonify({"success": True})
 
+    else:
+        # GET request → load progress
+        conn = get_db_connection()
+        cur = conn.cursor(dictionary=True)
 
-
-
-@app.route("/api/study-history")
-def study_history():
-    user_id = session.get("user_id")
-    if not user_id:
-        return jsonify([]), 200
-
-    conn = get_db_connection()
-    cur  = conn.cursor(dictionary=True)
-
-    # 1) Which categories has the user ever touched?
-    cur.execute("""
-      SELECT DISTINCT category_id
-      FROM user_study_progress
-      WHERE user_id = %s
-    """, (user_id,))
-    cats = [r["category_id"] for r in cur.fetchall()]
-
-    # Friendly names for display
-    CATEGORY_NAMES = {
-      1: "Introduction",
-      2: "Screening",
-      3: "Diagnosis",
-      4: "Treatment",
-      5: "Survivorship"
-    }
-
-    history = []
-
-    for cat in cats:
-        # 2) Count distinct days they answered in this category
+        # FIX THIS TOO → Fetch status column not completed
         cur.execute("""
-          SELECT COUNT(DISTINCT DATE(time_answered)) AS attempts
-          FROM user_study_progress
-          WHERE user_id = %s AND category_id = %s
-        """, (user_id, cat))
-        attempts = cur.fetchone()["attempts"] or 0
+            SELECT lesson_type, lesson_id, status FROM user_progress_VQR
+            WHERE user_id = %s
+        """, (user_id,))
 
-        # 3) Fetch all their saved answers for this category
-        cur.execute("""
-          SELECT study_question_id, question_type, user_answer
-          FROM user_study_progress
-          WHERE user_id = %s AND category_id = %s
-        """, (user_id, cat))
-        answers = cur.fetchall()
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
 
-        total_awarded  = 0
-        total_possible = 0
-        summary_items  = []
-
-        for ans in answers:
-            qid   = ans["study_question_id"]
-            ua    = (ans["user_answer"] or "").strip()
-            qtype = ans["question_type"]
-
-            if qtype in ("Multiple Choice", "T/F"):
-                # 1 point questions
-                cur.execute("""
-                  SELECT is_correct
-                  FROM study_question_options
-                  WHERE category_id = %s
-                    AND study_question_id = %s
-                    AND option_text = %s
-                """, (cat, qid, ua))
-                row     = cur.fetchone()
-                correct = bool(row and row["is_correct"])
-                points  = 1
-                maxp    = 1
-                status  = "correct" if correct else "incorrect"
-
-            else:
-                # Short‐response (2 points)
-                # Pull both English (…E) and Spanish (…S) variants
-                base_id = qid[:-1]
-                cur.execute("""
-                  SELECT response_type, answer_text
-                  FROM study_short_response
-                  WHERE study_question_id IN (%s, %s)
-                """, (base_id + "E", base_id + "S"))
-                rows_sr = cur.fetchall()
-
-                correct_phrases = set()
-                semi_phrases    = set()
-                for r in rows_sr:
-                    for phrase in (r["answer_text"] or "").split(","):
-                        p = phrase.strip().lower()
-                        if not p: 
-                            continue
-                        if r["response_type"] == "correct":
-                            correct_phrases.add(p)
-                        elif r["response_type"] == "semi_correct":
-                            semi_phrases.add(p)
-
-                status = "incorrect"
-                text_lc = ua.lower()
-                if any(p in text_lc for p in correct_phrases):
-                    status = "correct"
-                elif any(p in text_lc for p in semi_phrases):
-                    status = "semi_correct"
-
-                if status == "correct":
-                    points = 2
-                elif status == "semi_correct":
-                    points = 1
-                else:
-                    points = 0
-                maxp = 2
-
-            total_awarded  += points
-            total_possible += maxp
-            summary_items.append(f"{qid}:{status}")
-
-        latest_score = (
-            round(total_awarded / total_possible * 100)
-            if total_possible > 0 else 0
-        )
-        summary = ", ".join(summary_items)
-
-        history.append({
-            "category":     CATEGORY_NAMES.get(cat, f"Category {cat}"),
-            "attempts":     attempts,
-            "latest_score": latest_score,
-            "summary":      summary
-        })
-
-    cur.close()
-    conn.close()
-
-    return jsonify(history)
-
-
+        return jsonify(rows)
     
 @app.route("/api/study_quiz/<int:category_id>")
 def get_study_quiz(category_id):
@@ -1079,6 +853,144 @@ def clear_study_answers(category_id):
     conn.close()
     return jsonify({"success": True})
 
+# ────── Study Quiz History ──────
+@app.route("/api/study-history")
+def api_study_history():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify([])
+
+    names = {
+        1: "Introduction",
+        2: "Screening & Detection",
+        3: "Diagnosis",
+        4: "Treatment",
+        5: "Survivorship"
+    }
+
+    conn = get_db_connection()
+    cur = conn.cursor(dictionary=True)
+
+    # 1) how many distinct days they submitted answers per category
+    cur.execute("""
+      SELECT category_id,
+             COUNT(DISTINCT DATE(time_answered)) AS attempts
+      FROM user_study_progress
+      WHERE user_id = %s
+      GROUP BY category_id
+    """, (user_id,))
+    history = cur.fetchall()
+
+    result = []
+    for row in history:
+        cat_id = row["category_id"]
+        attempts = row["attempts"]
+
+        # 2) get their latest timestamp for this category
+        cur.execute("""
+          SELECT MAX(time_answered) AS last_time
+          FROM user_study_progress
+          WHERE user_id = %s AND category_id = %s
+        """, (user_id, cat_id))
+        last_time = cur.fetchone()["last_time"]
+
+        # 3) re-compute their score for that last submission date
+        cur.execute("""
+          SELECT
+            SUM(
+              CASE
+                WHEN so.is_correct AND usp.user_answer = so.option_text
+                THEN 1 ELSE 0 END
+            )       AS correct,
+            COUNT(*) AS total
+          FROM user_study_progress usp
+          JOIN study_question_options so
+            ON usp.category_id = so.category_id
+           AND usp.study_question_id = so.study_question_id
+          WHERE usp.user_id = %s
+            AND usp.category_id = %s
+            AND DATE(usp.time_answered) = DATE(%s)
+        """, (user_id, cat_id, last_time))
+        scores = cur.fetchone()
+        if scores and scores["total"]:
+            pct = round(scores["correct"] / scores["total"] * 100)
+        else:
+            pct = 0
+
+        result.append({
+            "category":      names.get(cat_id, f"Category {cat_id}"),
+            "attempts":      attempts,
+            "latest_score":  pct,
+            "summary":       f"{scores['correct']} of {scores['total']} correct"
+        })
+
+    cur.close()
+    conn.close()
+    return jsonify(result)
+# ────── Recent Performance ──────
+@app.route("/api/recent-quizzes")
+def api_recent_quizzes():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify([])
+
+    names = {
+        1: "Introduction",
+        2: "Screening & Detection",
+        3: "Diagnosis",
+        4: "Treatment",
+        5: "Survivorship"
+    }
+
+    conn = get_db_connection()
+    cur = conn.cursor(dictionary=True)
+
+    # grab their last 5 submission dates + categories
+    cur.execute("""
+      SELECT category_id,
+             MAX(time_answered) AS last_time
+      FROM user_study_progress
+      WHERE user_id = %s
+      GROUP BY category_id, DATE(time_answered)
+      ORDER BY last_time DESC
+      LIMIT 5
+    """, (user_id,))
+    recent = cur.fetchall()
+
+    output = []
+    for row in recent:
+        cat_id   = row["category_id"]
+        last_time= row["last_time"]
+
+        # compute score for that submission
+        cur.execute("""
+          SELECT
+            SUM(
+              CASE
+                WHEN so.is_correct AND usp.user_answer = so.option_text
+                THEN 1 ELSE 0 END
+            )       AS correct,
+            COUNT(*) AS total
+          FROM user_study_progress usp
+          JOIN study_question_options so
+            ON usp.category_id = so.category_id
+           AND usp.study_question_id = so.study_question_id
+          WHERE usp.user_id = %s
+            AND usp.category_id = %s
+            AND DATE(usp.time_answered) = DATE(%s)
+        """, (user_id, cat_id, last_time))
+        sc = cur.fetchone()
+        pct = round(sc["correct"] / sc["total"] * 100) if sc and sc["total"] else 0
+
+        output.append({
+            "title":    f"{names.get(cat_id, 'Category')} Quiz",
+            "category": names.get(cat_id, f"{cat_id}"),
+            "score":    pct
+        })
+
+    cur.close()
+    conn.close()
+    return jsonify(output)
 
 # ────── Run Server ──────
 if __name__ == "__main__":
