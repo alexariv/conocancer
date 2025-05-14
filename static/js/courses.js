@@ -29,7 +29,17 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // =============== VIDEO + EMBEDDED QUESTIONS ===============
-  function loadVideo(id) {
+  async function loadVideo(id) {
+    // 1) fetch saved position
+  let resumeTime = 0;
+  try {
+    const res = await fetch(`/api/progress/position?lessonKey=video${id}`);
+    const json = await res.json();
+    resumeTime = json.position || 0;
+  } catch (e) {
+    console.warn("Could not fetch resume position", e);
+  }
+  let lastAllowedTime = resumeTime;
     const videoID = currentLanguage === "en" ? "03E" : "03S";
     const videoURL = `/static/media/${videoMap[currentLanguage][id]}`;
 
@@ -44,37 +54,78 @@ document.addEventListener("DOMContentLoaded", () => {
       </video>
     `;
 
-    const player = videojs("lesson-video", {
-      autoplay: true,
-      muted: true,
-      controls: true
+    const player = videojs("lesson-video", { controls: true,
+    autoplay: false,    // ← turn this off
+    muted: true,        // you can still start muted if you like
+    preload: "auto",
+    controlBar: {
+      children: [
+        "playToggle",
+        "volumePanel",
+        "currentTimeDisplay",
+        "progressControl",    // ← this is your seek‐bar
+        "durationDisplay",
+        "fullscreenToggle"
+      ]
+    }
     });
 
     let hasStartedPlaying = false;
-    let lastAllowedTime = 0;
-
-    player.ready(() => {
-      player.play().catch(() => {});
-      player.one("play", () => {
-        hasStartedPlaying = true;
-        updateProgress(`video${id}`, "in_progress");
-        updateLessonStatusUI(id, "video", "in_progress");
-        player.muted(false);
-        player.volume(1.0);
-      });
-    });
-
+    // throttle to once every 10 seconds:
+    let lastSavedTime = 0;
     player.on("timeupdate", () => {
-      if (!player.paused()) {
-        lastAllowedTime = player.currentTime();
-      }
-    });
+      const now = player.currentTime();
+      if (Math.abs(now - lastSavedTime) > 10) {       // 10-second granularity
+    savePosition(`video${id}`, now);
+    lastSavedTime = now;
+    }
+  });
 
-    player.on("seeking", () => {
-      if (player.currentTime() > lastAllowedTime + 1) {
-        player.currentTime(lastAllowedTime);
-      }
-    });
+// also save when they explicitly pause
+player.on("pause", () => {
+  savePosition(`video${id}`, player.currentTime());
+});
+
+    //player.ready(() => {
+      //player.play().catch(() => {});
+      //player.one("play", () => {
+       // hasStartedPlaying = true;
+       // updateProgress(`video${id}`, "in_progress");
+       // updateLessonStatusUI(id, "video", "in_progress");
+      //  player.muted(false);
+       // player.volume(1.0);
+      //});
+    //});
+   player.ready(() => {
+  // 1) seek to the server‐saved spot
+  if (resumeTime > 1) {
+    player.currentTime(resumeTime);
+    lastAllowedTime = resumeTime;
+  }
+  // 2) leave it paused so the user can hit ▶️ when ready
+  player.one('play', () => {
+    hasStartedPlaying = true;
+    updateProgress(`video${id}`, 'in_progress');
+    updateLessonStatusUI(id, 'video', 'in_progress');
+    player.muted(false);
+    player.volume(1.0);
+  });
+});
+
+   // update the furthest-played point whenever the video is playing
+  player.on("timeupdate", () => {
+    if (!player.paused()) {
+      lastAllowedTime = Math.max(lastAllowedTime, player.currentTime());
+    }
+  });
+
+  // only clamp seeking if the user tries to jump ahead of lastAllowedTime
+  player.on("seeking", () => {
+    const target = player.currentTime();
+    if (target > lastAllowedTime + 1) {
+      player.currentTime(lastAllowedTime);
+    }
+  });
 
     player.on("ended", () => {
       if (hasStartedPlaying) {
@@ -455,6 +506,15 @@ document.addEventListener("DOMContentLoaded", () => {
       body: JSON.stringify({ lessonKey, status })
     });
   }
+ function savePosition(lessonKey, position) {
+  return fetch('/api/progress/position', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ lessonKey, position })
+  })
+}
+
+
 
   async function loadUserProgress() {
     try {

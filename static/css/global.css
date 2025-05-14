@@ -756,3 +756,8 @@ textarea {
 .main-content {
   margin-left: 280px;
 }
+
+/* make sure the progress control isn’t accidentally hidden */
+.video-js .vjs-control-bar .vjs-progress-control {
+  display: flex !important;
+}

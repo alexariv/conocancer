@@ -764,6 +764,57 @@ def reset_password():
     session.pop("reset_email", None)
     return jsonify(success=True) 
 
+@app.route('/api/progress/position', methods=['POST'])
+def save_position():
+    data = request.get_json() or {}
+    user_id   = session.get("user_id")
+    if not user_id:
+        return jsonify(error="Not authenticated"), 401
+
+    video_key = data.get('lessonKey')            # "video3"
+    try:
+        position = float(data.get('position', 0))
+    except (TypeError, ValueError):
+        return jsonify(error="Invalid position"), 400
+
+    conn = get_db_connection()
+    cur  = conn.cursor()
+
+    # UPSERT: insert or update existing
+    cur.execute("""
+      INSERT INTO video_progress_timestamp (user_id, video_key, last_position_seconds)
+      VALUES (%s, %s, %s)
+      ON DUPLICATE KEY UPDATE
+        last_position_seconds = VALUES(last_position_seconds),
+        updated_at = CURRENT_TIMESTAMP
+    """, (user_id, video_key, position))
+
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify(success=True)
+
+@app.route('/api/progress/position')
+def get_position():
+    user_id   = session.get("user_id")
+    if not user_id:
+        return jsonify(position=0)
+
+    video_key = request.args.get('lessonKey', '')
+    conn = get_db_connection()
+    cur  = conn.cursor()
+    cur.execute("""
+      SELECT last_position_seconds
+      FROM video_progress_timestamp
+      WHERE user_id=%s AND video_key=%s
+    """, (user_id, video_key))
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    return jsonify(position=(row[0] if row else 0))
+
+
 # ────── Run Server ──────
 if __name__ == "__main__":
     app.run(debug=True)
