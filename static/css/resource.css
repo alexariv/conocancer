@@ -69,6 +69,10 @@
 .hospitals-panel,
 .support-panel {
   width: 48%;
+  min-height: 520px; /* ✅ Match existing hospital height */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 /* ========== Map Styling ========== */
@@ -83,6 +87,15 @@
 /* ========== Center List (Hospitals) ========== */
 .center-list {
   flex-grow: 1;
+}
+
+/* ========== Support List (Home Preview) ========== */
+.support-card-list {
+  flex-grow: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .center-card {
@@ -178,7 +191,7 @@
 }
 
 .modal-content {
-  background-color: white;
+  background-color: black;
   width: 100%;
   max-width: 1280px;
   height: 90%;
@@ -211,10 +224,12 @@
 .modal-header input,
 .modal-header button,
 .modal-header select {
-  padding: 10px 12px;
+  height: 72px;
+  padding: 0px 10px;
   border-radius: 8px;
   border: 1px solid #ccc;
   font-size: 14px;
+  width: 400px;
 }
 
 .modal-body {
@@ -228,7 +243,7 @@
   flex: 1;
   max-width: 480px;
   overflow-y: auto;
-  background-color: #f7f1f6;
+  background-color: #f0e0f1;
   padding: 20px;
   border-right: 1px solid #ddd;
 }
@@ -425,7 +440,7 @@
 }
 
 .support-modal-content {
-  background: white;
+  background: #f0e0f1;
   padding: 30px 40px;
   max-width: 1000px;
   width: 90%;
@@ -437,10 +452,10 @@
 
 .support-close {
   position: absolute;
-  top: 14px;
-  right: 18px;
-  font-size: 22px;
+  top: 20px;
+  right: 20px;
   background: transparent;
+  font-size: 24px;
   border: none;
   cursor: pointer;
 }
@@ -533,15 +548,24 @@
   color: #444;
 }
 
-.final-join {
-  margin-top: 20px;
+.final-join,
+.join-popup-box button.final-join {
   background-color: #2f1847;
   color: white;
-  padding: 8px 20px;
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  font-size: 0.7rem; /* slightly smaller like the tag */
+  padding: 2px 8px;
+  border-radius: 4px;
   border: none;
-  border-radius: 6px;
-  font-size: 0.9rem;
+  display: inline-block;
+  text-align: center;
+  line-height: 1.4;
   cursor: pointer;
+}
+
+.final-join:hover {
+  background-color: #452262;
 }
 
 .close-join-popup {
@@ -569,7 +593,7 @@
 
 /* Modal Content */
 .modal-content {
-  background-color: #fff;
+  background-color: #e2c8dd;
   margin: 5% auto;
   padding: 20px;
   border-radius: 10px;
@@ -663,3 +687,67 @@
   border: 1px solid #ccc;
   margin-bottom: 20px;
 }
+
+.filter-container {
+  margin-bottom: 20px;
+  font-size: 0.95rem;
+  max-width: 400px;
+}
+
+.filter-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.checkbox-filter {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
+  gap: 8px 16px;
+  background: #fff;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+}
+
+.checkbox-filter label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  color: #333;
+}
+
+.checkbox-filter input[type="checkbox"] {
+  accent-color: #2f1847;
+  width: 16px;
+  height: 16px;
+}
+
+.filter-controls {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 70px;
+  margin-top: -50px;
+  padding-left: 20px;
+  flex-wrap: wrap;
+}
+
+.filter-controls select {
+  background-color: #2f1847;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  margin-right: 10px;
+  font-family: "Inter", sans-serif;
+}
+

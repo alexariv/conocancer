@@ -1093,6 +1093,39 @@ def change_password():
     conn.close()
     return jsonify({"success": True, "message": "Password updated successfully"})
 
+@app.route('/api/user_stats')
+def user_stats():
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({"error": "Missing user_id"}), 400
+
+    conn = get_db_connection()
+    cur = conn.cursor(dictionary=True)
+
+    # Aggregate counts by status
+    cur.execute("""
+        SELECT status, COUNT(*) AS count
+        FROM user_progress_VQR
+        WHERE user_id = %s
+        GROUP BY status
+    """, (user_id,))
+    rows = cur.fetchall()
+
+    # Build a stats dict from the result set
+    stats_by_status = { row['status']: row['count'] for row in rows }
+
+    # Ensure all statuses are represented (adjust keys to your actual status values)
+    result = {
+        "completed":   stats_by_status.get("completed",   0),
+        "in_progress": stats_by_status.get("in_progress", 0),
+        "not_started": stats_by_status.get("not_started", 0),
+        "total":       sum(stats_by_status.values())
+    }
+
+    cur.close()
+    conn.close()
+    return jsonify(result)
+
 # ────── Run Server ──────
 if __name__ == "__main__":
     app.run(debug=True)

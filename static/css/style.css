@@ -906,3 +906,7 @@ a:hover {
   background: #dbeafe;
   color: #1d4ed8;
 }
+
+.progress-ring {
+  display: none !important;
+}

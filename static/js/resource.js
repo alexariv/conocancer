@@ -1,29 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-  async function fetchUserProgress() {
-  try {
-    const res  = await fetch("/api/progress");
-    const data = await res.json();
-    renderProgress(data);
-  } catch (err) {
-    console.error("Failed to load progress:", err);
-  }
-}
-
-function renderProgress(data) {
-  // 1) Overall bar
-  const bar = document.querySelector(".overall-progress .progress-bar");
-  bar.style.width = `${data.overallProgress}%`;
-
-  // 2) Total quizzes
-  document.getElementById("metric-total-quizzes").innerHTML = `
-    ${translations[currentLang].milestones.quizzes}<br>
-    <strong>${data.totalQuizzes.completed} / ${data.totalQuizzes.total}</strong>`;
-
-  // 3) Categories mastered
-  document.getElementById("metric-categories-mastered").innerHTML = `
-    ${translations[currentLang].milestones.categories}<br>
-    <strong>${data.categoriesMastered.completed} / ${data.categoriesMastered.total}</strong>`;
-}
   // ===== Profile Dropdown Logic =====
   const dropdownToggle = document.getElementById("dropdownToggle");
   const dropdownMenu = document.getElementById("dropdownMenu");
@@ -67,6 +42,7 @@ function renderProgress(data) {
   const hospitalModal = document.getElementById("hospitalModal");
   const openHospitalModalBtn = document.getElementById("openHospitalModal");
   const closeHospitalModalBtn = document.getElementById("closeModalBtn");
+
   openHospitalModalBtn?.addEventListener("click", (e) => {
     e.preventDefault();
     hospitalModal.style.display = "flex";
@@ -89,15 +65,38 @@ function renderProgress(data) {
   });
 
   const supportModal = document.getElementById("supportModal");
-  const openSupportModal = document.getElementById("openSupportModal");
+  const openSupportModal = document.getElementById("openSupportModalBtn");
   const closeSupportModal = document.getElementById("closeSupportModal");
+
+  // Open modal
   openSupportModal?.addEventListener("click", (e) => {
     e.preventDefault();
+    hospitalModal.style.display = "none";
     supportModal.style.display = "flex";
-    fetchSupportGroups(); // use the correct function
+    fetchSupportGroups(); // populate content
   });
+
+  // Close modal via X button
   closeSupportModal?.addEventListener("click", () => {
     supportModal.style.display = "none";
+  });
+
+  // Close modal if clicked outside the modal content
+  window.addEventListener("click", (e) => {
+    if (e.target === supportModal) {
+      supportModal.style.display = "none";
+    }
+  });
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const supportModal = document.getElementById("supportModal");
+    const closeSupportBtn = document.getElementById("closeSupportModal");
+
+    if (supportModal && closeSupportBtn) {
+      closeSupportBtn.addEventListener("click", () => {
+        supportModal.style.display = "none";
+      });
+    }
   });
 
   const joinPopup = document.getElementById("joinGroupPopup");
@@ -106,45 +105,37 @@ function renderProgress(data) {
     joinPopup.style.display = "none";
   });
 
-  async function fetchRecentPerformance() {
-  try {
-    const res     = await fetch("/api/recent-quizzes");
-    const quizzes = await res.json();
-    renderRecentPerformance(quizzes);
-  } catch (err) {
-    console.error("Failed to load recent quizzes:", err);
-  }
-}
+  const insuranceFilter = document.getElementById("insuranceFilter");
 
-function renderRecentPerformance(quizzes) {
-  const container = document.getElementById("recent-performance-container");
-
-  if (quizzes.length === 0) {
-    container.innerHTML = `<p data-i18n="recent.noData">No quizzes yet.</p>`;
-    applyTranslations();  // so “No quizzes yet.” gets localized
-    return;
-  }
-
-  container.innerHTML = quizzes.map(q => {
-    const scoreClass = q.score >= 90 ? "blue" :
-                       q.score >= 75 ? "green" : "pink";
-    const label      = translations[currentLang].items[q.category] || q.category;
-    return `
-      <div class="performance-row">
-        <div>
-          <strong>${q.title}</strong><br>
-          <small>${label}</small>
-        </div>
-        <span class="score ${scoreClass}">${q.score}%</span>
-      </div>`;
-  }).join("");
-}
+  insuranceFilter?.addEventListener("change", () => {
+    const selectedInsurance = insuranceFilter.value;
+    filterHospitalsByInsurance(selectedInsurance);
+  });
 
   // ===== Dynamic Data Fetch =====
   fetchHospitals();
   fetchSupportGroups();
 
-  // ===== Event Delegation for dynamically‑added buttons =====
+  const languageSelect = document.getElementById("languageFilter");
+  const locationSelect = document.getElementById("locationFilter");
+
+  function applySupportFilters() {
+    const lang = languageSelect?.value || "all";
+    const loc = locationSelect?.value || "all";
+
+    const filtered = allSupportGroups.filter((g) => {
+      const matchesLang = lang === "all" || g.language === lang;
+      const matchesLoc = loc === "all" || g.location === loc;
+      return matchesLang && matchesLoc;
+    });
+
+    renderSupportGroups(filtered);
+  }
+
+  languageSelect?.addEventListener("change", applySupportFilters);
+  locationSelect?.addEventListener("change", applySupportFilters);
+
+  //===== Event Delegation for dynamically‑added buttons =====
   document.getElementById("hospitalList").addEventListener("click", (e) => {
     const btn = e.target.closest(".open-hospital");
     if (!btn) return;
@@ -156,7 +147,20 @@ function renderRecentPerformance(quizzes) {
     const btn = e.target.closest(".join-group");
     if (!btn) return;
     e.preventDefault();
-    openSupportGroupDetail(btn.dataset.id);
+    window.open(
+      "https://breast-cancer.adelphi.edu/services/support-groups/",
+      "_blank"
+    );
+  });
+
+  document.getElementById("supportGrid").addEventListener("click", (e) => {
+    const btn = e.target.closest(".join-group");
+    if (!btn) return;
+    e.preventDefault();
+    window.open(
+      "https://breast-cancer.adelphi.edu/services/support-groups/",
+      "_blank"
+    );
   });
 });
 
@@ -166,6 +170,7 @@ function fetchHospitals() {
     .then((response) => response.json())
     .then((data) => {
       const hospitalList = document.getElementById("hospitalList");
+      console.log("Fetched hospital data:", data);
 
       // Show only first 2
       const limited = data.slice(0, 2);
@@ -189,6 +194,22 @@ function loadHospitalResults() {
   fetch("/api/hospitals")
     .then((response) => response.json())
     .then((data) => {
+      const insuranceFilter = document.getElementById("insuranceFilter");
+      const selectedInsurances = Array.from(
+        insuranceFilter.selectedOptions
+      ).map((option) => option.value);
+
+      const isAllSelected =
+        selectedInsurances.includes("All") || selectedInsurances.length === 0;
+
+      // ✅ Updated logic to handle "All Insurances"
+      const filteredHospitals =
+        selectedInsurances.includes("all") || selectedInsurances.length === 0
+          ? data
+          : data.filter((hospital) =>
+              hospital.insurance.some((ins) => selectedInsurances.includes(ins))
+            );
+
       const modalList = document.getElementById("modalHospitalList");
       modalList.innerHTML = data
         .map(
@@ -203,9 +224,43 @@ function loadHospitalResults() {
         )
         .join("");
       attachPopupListeners();
-      initializeModalMap(data);
+      initializeModalMap(filteredHospitals);
     });
 }
+
+document
+  .getElementById("insuranceFilter")
+  ?.addEventListener("change", async () => {
+    const selectedOptions = Array.from(
+      document.getElementById("insuranceFilter").selectedOptions
+    ).map((option) => option.value);
+
+    const response = await fetch("/api/hospitals");
+    const hospitals = await response.json();
+
+    const filtered = selectedOptions.length
+      ? hospitals.filter((h) =>
+          h.insurance.some((ins) => selectedOptions.includes(ins))
+        )
+      : hospitals;
+
+    const modalList = document.getElementById("modalHospitalList");
+    modalList.innerHTML = filtered
+      .map(
+        (h) => `
+      <div class="result-card">
+        <div>
+          <strong>${h.name}</strong>
+          <p>${h.address}</p>
+        </div>
+        <button class="open-popup" data-id="${h.id}" type="button">Open</button>
+      </div>`
+      )
+      .join("");
+
+    attachPopupListeners(); // rebind listeners
+    initializeModalMap(filtered); // refresh map
+  });
 
 function attachPopupListeners() {
   const popupButtons = document.querySelectorAll(".open-popup");
@@ -273,41 +328,139 @@ function showHospitalPopup(id) {
 
 // === Support Group Panel ===
 function fetchSupportGroups() {
-  fetch("/api/support-groups")
-    .then((res) => res.json())
-    .then((data) => {
-      // Homepage panel
-      const homepageList = document.getElementById("supportGroupList");
-      homepageList.innerHTML = data
-        .map(
-          (g) => `
-        <div class="support-card">
-          <strong>${g.name}</strong>
-          <span class="badge">${g.language}</span>
-          <p>${g.description}</p>
-          <p>🕒 ${g.schedule}</p>
-          <p>📍 ${g.location}</p>
-          <button class="join-group" data-id="${g.id}" type="button">Join Group</button>
-        </div>`
-        )
-        .join("");
+  const data = [
+    {
+      id: 1,
+      name: "Young Women’s Drop-In Support Group – Under 45 years of age *Virtual",
+      language: "English",
+      description:
+        "This group will address the unique needs of young women with breast cancer and will meet via zoom",
+      schedule: "Tuesday’s from 7pm – 8pm",
+      location: "Virtual",
+    },
+    {
+      id: 2,
+      name: "Drop-In Support Group – Virtual",
+      language: "English",
+      description:
+        "Newly Diagnosed Drop-In Support Group - This group will address the unique needs of young women with breast cancer and will meet via zoom",
+      schedule: "Friday’s from 12pm – 1pm",
+      location: "Virtual",
+    },
+    {
+      id: 3,
+      name: "Drop-In Support Group – In-Person",
+      language: "English",
+      description:
+        "Hormone Therapy Drop-In Support Group - This support group is for breast cancer patients and survivors who are currently on hormone therapy (as adjuvant therapy).",
+      schedule: "Monday’s from 6pm – 7pm",
+      location: "In-Person",
+    },
+    {
+      id: 4,
+      name: "Stage 4 Breast Cancer Support Group – Virtual",
+      language: "English",
+      description:
+        "Men and women with Stage 4 Metastatic Breast Cancer are welcome to join an ongoing twice-monthly group via zoom to share information, feelings, hopes and coping strategies.",
+      schedule: "Twice-Monthly",
+      location: "Virtual",
+    },
+    {
+      id: 5,
+      name: "Cafecito – *Virtual*",
+      language: "Spanish",
+      description:
+        "Un grupo de apoyo para pacientes y sobrevivientes de Cáncer del seno.",
+      schedule: "Meets 1st Thursday of the month",
+      location: "In-Person",
+    },
+    {
+      id: 6,
+      name: "Cafecito – *Virtual*",
+      language: "Spanish",
+      description:
+        "Un grupo de apoyo para pacientes y sobrevivientes de Cáncer del seno.",
+      schedule: "Meets 2nd Thursday of the month",
+      location: "Virtual",
+    },
+    {
+      id: 7,
+      name: "Cafecito – *Virtual*",
+      language: "Spanish",
+      description:
+        "Un grupo de apoyo para pacientes y sobrevivientes de Cáncer del seno.",
+      schedule: "Meets 3rd Thursday of the month",
+      location: "Virtual",
+    },
+    {
+      id: 8,
+      name: "Cafecito – *Virtual*",
+      language: "Spanish",
+      description:
+        "Un grupo de apoyo para pacientes y sobrevivientes de Cáncer del seno.",
+      schedule: "Meets 4th Thursday of the month",
+      location: "Virtual",
+    },
+  ];
 
-      // “View All” modal
-      const modalList = document.getElementById("supportGrid");
-      modalList.innerHTML = data
-        .map(
-          (g) => `
+  // Store for filtering
+  cachedSupportGroups = data;
+  allSupportGroups = data;
+
+  // === Homepage panel – show 2 only
+  const homepageList = document.getElementById("supportGroupList");
+  homepageList.innerHTML = data
+    .slice(0, 2)
+    .map(
+      (g) => `
         <div class="support-card">
           <strong>${g.name}</strong>
           <span class="badge">${g.language}</span>
           <p>${g.description}</p>
           <p>🕒 ${g.schedule}</p>
           <p>📍 ${g.location}</p>
-          <button class="join-group" data-id="${g.id}" type="button">Join Group</button>
+          <button class="join-group final-join" data-id="${g.id}" type="button">Join Group</button>
         </div>`
-        )
-        .join("");
-    });
+    )
+    .join("");
+
+  // === Preload full list into modal
+  renderSupportGroups(data); // uses full unfiltered list
+}
+
+// === Render for Modal (called by language filter too)
+function renderSupportGroups(data) {
+  const modalList = document.getElementById("supportGrid");
+  modalList.innerHTML = data
+    .map(
+      (g) => `
+      <div class="support-card">
+        <strong>${g.name}</strong>
+        <span class="badge">${g.language}</span>
+        <p>${g.description}</p>
+        <p>🕒 ${g.schedule}</p>
+        <p>📍 ${g.location}</p>
+        <button class="join-group final-join" data-id="${g.id}" type="button">Join Group</button>
+      </div>`
+    )
+    .join("");
+}
+
+function populateSupportModal(data) {
+  const modalList = document.getElementById("supportGrid");
+  modalList.innerHTML = data
+    .map(
+      (g) => `
+    <div class="support-card">
+      <strong>${g.name}</strong>
+      <span class="badge">${g.language}</span>
+      <p>${g.description}</p>
+      <p>🕒 ${g.schedule}</p>
+      <p>📍 ${g.location}</p>
+      <button class="join-group" data-id="${g.id}" type="button">Join Group</button>
+    </div>`
+    )
+    .join("");
 }
 
 function openSupportGroupDetail(id) {
@@ -495,6 +648,39 @@ function initializeModalMap(hospitals) {
 
         modalMap.setView(latlng, 14);
       }
+
+      document.addEventListener("click", (e) => {
+        const btn = e.target.closest(".open-hospital");
+        if (!btn) return;
+        e.preventDefault();
+        console.log("Clicked open-hospital", btn.dataset.id); // ✅ Debug
+        openHospitalDetail(btn.dataset.id);
+      });
     });
   }
 }
+
+
+ const dropdownToggle = document.getElementById("dropdownToggle");
+  const dropdownMenu = document.getElementById("dropdownMenu");
+
+  if (dropdownToggle && dropdownMenu) {
+    dropdownToggle.addEventListener("click", () => {
+      dropdownMenu.style.display = dropdownMenu.style.display === "block" ? "none" : "block";
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!dropdownMenu.contains(e.target) && !dropdownToggle.contains(e.target)) {
+        dropdownMenu.style.display = "none";
+      }
+    });
+  }
+
+  // Logout button
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+      alert("Logging out...");
+      window.location.href = "/logout";
+    });
+  }

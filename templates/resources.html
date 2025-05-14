@@ -1,5 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -21,16 +19,22 @@
       <div class="logo"><span class="logo-text">ConoCancer</span></div>
       <nav class="sidebar-nav">
         <ul>
-          <li ><a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='imgs/Home.png') }}" alt="Overview Icon" /> <span>Dashboard</span></a></li>
-          <li><a href="{{ url_for('videos_and_articles') }}"><img src="{{ url_for('static', filename='imgs/Folder.png') }}" alt="Videos Icon" /> <span>Videos & Articles</span></a></li>
-          <li class="active"><a href="{{ url_for('resources') }}"><img src="{{ url_for('static', filename='imgs/Chat.png') }}" alt="Resources Icon" /> <span>Resources</span></a></li>
-          <li><a href="{{ url_for('progress') }}"><img src="{{ url_for('static', filename='imgs/Category.png') }}" alt="Progress Icon" /> <span>Progress</span></a></li>
-          <li><a href="{{ url_for('setting') }}"><img src="{{ url_for('static', filename='imgs/Setting.png') }}" alt="Settings Icon" /> <span>Setting</span></a></li>
+          <li><a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='imgs/Home.png') }}" alt="Overview" /> <span class="nav-text">Dashboard</span></a></li>
+          <li >
+            <a href="{{ url_for('videos_and_articles') }}">
+              <img src="{{ url_for('static', filename='imgs/Folder.png') }}" alt="Videos Icon" />
+              <span class="nav-text">Videos & Articles</span>
+            </a>
+          </li>
+         
+          <li ><a href="{{ url_for('resources') }}"><img src="{{ url_for('static', filename='imgs/Chat.png') }}" alt="Resources" /> <span class="nav-text">Resources</span></a></li>
+          <li><a href="{{ url_for('progress') }}"><img src="{{ url_for('static', filename='imgs/Category.png') }}" alt="Progress" /> <span class="nav-text">Progress</span></a></li>
+          <li><a href="{{ url_for('setting') }}"><img src="{{ url_for('static', filename='imgs/Setting.png') }}" alt="Settings" /> <span class="nav-text">Settings</span></a></li>
         </ul>
       </nav>
       <div class="illustration"><img src="{{ url_for('static', filename='imgs/image 1.png') }}" alt="Illustration" /></div>
     </aside>
- 
+  
   <!-- Main Content -->
   <main class="main-content">
     <!-- Top bar -->
@@ -44,7 +48,7 @@
             <span id="user-photo" style="font-size: 20px; display: inline-block; line-height: 1;" aria-label="User">👤</span>
             <div class="user-details">
               <strong id="profile-name">{{ user_name }}</strong>
-             
+              <span id="join-date">Member since Apr 2025</span>
             </div>
             <button class="dropdown-toggle" id="dropdownToggle">▼</button>
           </div>
@@ -59,26 +63,30 @@
       </div>
     </header>
 
-    <!-- Panel Section -->
     <section class="panel-wrapper">
+
+      <!-- ✅ Hospital Panel -->
       <div class="panel hospitals-panel">
-        <h3>Hospitals and Clinics</h3>
+        <h3>Hospitals</h3>
         <div id="map" class="map"></div>
         <div class="center-list" id="hospitalList">
-  <!-- Hospital cards will be dynamically inserted here -->
-</div>
-<a href="#" class="view-all" id="openHospitalModal">View All</a>
-
-
+          <!-- Hospital cards will be dynamically inserted -->
+        </div>
+        <a href="#" class="view-all" id="openHospitalModal">View All</a>
       </div>
-
+    
+      <!-- ✅ Support Group Panel -->
       <div class="panel support-panel">
         <h3>Support Groups</h3>
         <div class="support-card-list" id="supportGroupList">
-  <!-- Support group cards will be dynamically inserted here -->
-</div>
-<a href="#" class="view-all" id="openSupportModal">View All</a>
-
+          <!-- Support group cards will be dynamically inserted -->
+        </div>
+        <a href="#" class="view-all" id="openSupportModalBtn">View All</a>
+      </div>
+    
+    </section>
+    
+    
       </div>
     </section>
   </main>
@@ -88,25 +96,51 @@
   <div class="modal-content">
     <button class="close-btn" id="closeModalBtn">✕</button>
     <div class="modal-header">
-      <input type="text" id="addressSearchInput" placeholder="Address, City, ZIP" class="search-input" />
-      <button>Hospitals</button>
-      <button>Clinics</button>
-      <select>
-        <option>Insurance type</option>
-        <option>Private</option>
-        <option>Public</option>
-      </select>
+      <div class="filter-container">
+        <label for="addressSearchInput" class="filter-title">What's My Nearest Hospital?</label>
+        <input type="text" id="addressSearchInput" placeholder="Address, City, ZIP" class="search-input" />
+      </div>
+    
+      <div class="filter-container">
+        <label for="insuranceFilter" class="filter-title">Choose Your Insurance:</label>
+        <select id="insuranceFilter" multiple size="6">
+          <option value="Aetna">Aetna</option>
+          <option value="Alliant Health Plans">Alliant Health Plans</option>
+          <option value="Aspirus Health Plan">Aspirus Health Plan</option>
+          <option value="Blue Cross">Blue Cross</option>
+          <option value="Cigna">Cigna</option>
+          <option value="CMS Medicare">CMS Medicare</option>
+          <option value="Delta Dental">Delta Dental</option>
+          <option value="Elevance">Elevance</option>
+          <option value="EMI Health">EMI Health</option>
+          <option value="Empire Plan">Empire Plan</option>
+          <option value="Fidelis">Fidelis</option>
+          <option value="HCSC">HCSC</option>
+          <option value="Humana">Humana</option>
+          <option value="Medicare">Medicare</option>
+          <option value="MetroPlus Health Plan">MetroPlus Health Plan</option>
+          <option value="Molina">Molina</option>
+          <option value="MVP Health Care">MVP Health Care</option>
+          <option value="NY State Medicaid">NY State Medicaid</option>
+          <option value="Regence Health Plans">Regence Health Plans</option>
+          <option value="SelectHealth">SelectHealth</option>
+          <option value="United Healthcare">United Healthcare</option>
+          <option value="VillageCareMAX">VillageCareMAX</option>
+          <option value="Wellmark Health Plan">Wellmark Health Plan</option>
+        </select>
+      </div>
     </div>
+      
 
 <div class="modal-body">
       <!-- Inside .modal-body > .results-panel -->
       <div class="modal-body">
         <div class="results-panel">
-          <h4>Long Island Hospitals and Clinics</h4>
-          <p id="hospitalCount">Loading...</p>
+          <h4>Long Island Hospitals</h4>
+          <p id="hospitalCount">Click Open for more Info</p>
           <div id="modalHospitalList"><!-- JS will inject hospital results here --></div>
         </div>
-     
+      
         <div class="map-panel">
           <div id="modalMap"></div>
           <p class="disclaimer">
@@ -114,7 +148,7 @@
           </p>
         </div>
       </div> <!-- this is the ONLY closing div for .modal-body -->
-     
+      
   </div>
 </div>
 <div class="detail-modal" id="detailModal">
@@ -161,17 +195,30 @@
     </div>
   </div>
 </div>
+
 <div class="support-modal" id="supportModal">
   <div class="support-modal-content">
-  <button class="support-close" id="closeSupportModal">✕</button>
-  <h2>Support Groups</h2>
-  <div class="support-grid" id="supportGrid"><!-- Injected dynamically --></div>
-</div>
+    <button class="support-close" id="closeSupportModal">X</button>
+    <h2>Support Groups</h2>
 
-      <!-- Copy this card multiple times -->
+    <div class="filter-controls">
+      <select id="languageFilter">
+        <option value="all">All Languages</option>
+        <option value="English">English</option>
+        <option value="Spanish">Spanish</option>
+      </select>
+
+      <select id="locationFilter">
+        <option value="all">All Locations</option>
+        <option value="Virtual">Virtual</option>
+        <option value="In-Person">In-Person</option>
+      </select>
     </div>
+
+    <div class="support-grid" id="supportGrid"></div>
   </div>
 </div>
+
 
 <div class="join-popup" id="joinGroupPopup">
   <div class="join-popup-box">
@@ -181,117 +228,19 @@
     <p><strong>Schedule:</strong> <span id="groupSchedule"></span></p>
     <p><strong>Location:</strong> <span id="groupLocation"></span></p>
     <p><strong>Description:</strong> <span id="groupDescription"></span></p>
-    <button class="final-join">Request to Join</button>
-  </div>
-</div>
-  <!-- Feedback Button -->
-    <!-- Feedback Section Inline -->
-<button id="feedback-btn" class="feedback-fab">💬 Feedback</button>
-
-<div id="feedback-modal" class="modal hidden">
-  <div class="modal-content">
-    <button class="close-modal">&times;</button>
-    <h2 data-i18n="formTitle">Feedback Form</h2>
-    <p class="modal-subtitle" data-i18n="formSubtitle">We'd love to hear from you! Your feedback helps us improve the experience for everyone.</p>
-
-    <!-- Language Toggle -->
-    <div class="language-toggle">
-      <label class="switch">
-        <input type="checkbox" id="language-switch">
-        <span class="slider round"></span>
-      </label>
-      <span id="language-label">EN</span>
-    </div>
-
-    <form id="feedback-form">
-      <div class="form-group">
-        <p><strong data-i18n="experienceQuestion">How is your experience using the site?</strong></p>
-        <div class="rating-options">
-          <label><input type="radio" name="experience" value="Not great"> <span data-i18n="notGreat">Not great</span></label>
-          <label><input type="radio" name="experience" value="Okay"> <span data-i18n="okay">Okay</span></label>
-          <label><input type="radio" name="experience" value="Good"> <span data-i18n="good">Good</span></label>
-          <label><input type="radio" name="experience" value="Great"> <span data-i18n="great">Great</span></label>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <p><strong data-i18n="problemsQuestion">Did you experience any problems?</strong></p>
-        <div id="problem-options">
-          <label><input type="checkbox" name="problem" value="Audio did not play"> <span data-i18n="audioIssue">Audio did not play</span></label>
-          <label><input type="checkbox" name="problem" value="The video didn’t load"> <span data-i18n="videoIssue">The video didn’t load</span></label>
-          <label><input type="checkbox" name="problem" value="Transcription issue"> <span data-i18n="transcriptionIssue">The studio didn’t transcribe my voice correctly</span></label>
-          <label><input type="checkbox" name="problem" value="Language switch issue"> <span data-i18n="languageSwitchIssue">The language didn’t switch properly</span></label>
-          <label><input type="checkbox" name="problem" value="Confusing content"> <span data-i18n="confusingContent">Something was confusing</span></label>
-          <label><input type="checkbox" name="problem" value="Other"> <span data-i18n="other">Other</span></label>
-        </div>
-        <textarea placeholder="The video..." name="problem-detail" data-i18n-placeholder="problemDetailPlaceholder"></textarea>
-      </div>
-
-      <div class="form-group">
-        <p><strong data-i18n="additionalFeedback">Anything else you’d like to share?</strong></p>
-        <textarea name="additional-feedback" placeholder="It was hard to understand one of the quiz questions..." data-i18n-placeholder="additionalFeedbackPlaceholder"></textarea>
-      </div>
-
-      <button type="submit" class="submit-btn" data-i18n="sendFeedback">Send Feedback</button>
-    </form>
-    <p class="thank-you" data-i18n="thankYou">We appreciate your time—thank you for helping us improve!</p>
+    <button class="join-group final-join">Request to Join</button>
   </div>
 </div>
 
-</main>
-</div>
-{% with messages = get_flashed_messages(with_categories=true) %}
-{% if messages %}
-<ul class="flashes">
-  {% for category, message in messages %}
-    <li class="{{ category }}">{{ message }}</li>
-  {% endfor %}
-</ul>
-{% endif %}
-{% endwith %}
-<script>
-async function fetchUserData() {
-  return {
-    name: "{{ user_name }}",
-    joinDate: "Apr 2025",
-    photo: "default-user-icon.png",
-    stats: {
-      completed: 0,
-      watched: 0,
-      inProgress: 0,
-      quizzes: 0
-    },
-    courses: [
-      { id: "overview", percent: 0 },
-      { id: "diagnosis", percent: 0 },
-      { id: "treatment", percent: 0 },
-      { id: "survivor", percent: 0 }
-    ],
-    upcoming: []
-  };
-}
- // === Feedback Modal
-  const feedbackBtn = document.getElementById("feedback-btn");
-  const feedbackModal = document.getElementById("feedback-modal");
-  const closeFeedbackModal = feedbackModal?.querySelector(".close-modal");
+<select id="languageFilter">
+  <option value="all">All Languages</option>
+  <option value="English">English</option>
+  <option value="Spanish">Spanish</option>
+</select>
 
-  feedbackBtn?.addEventListener("click", () => {
-    feedbackModal.classList.remove("hidden");
-  });
-  closeFeedbackModal?.addEventListener("click", () => {
-    feedbackModal.classList.add("hidden");
-  });
-  window.addEventListener("click", (event) => {
-    if (event.target === feedbackModal) {
-      feedbackModal.classList.add("hidden");
-    }
-  });
-
-</script>
 
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="{{ url_for('static', filename='js/resource.js') }}" defer></script>
-<script src="{{ url_for('static', filename='js/feedback.js') }}" defer></script>
 </body>
 </html>

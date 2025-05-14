@@ -289,9 +289,20 @@
 
 
 
-  <!-- Sign Up Form -->
+   <!-- Sign Up Form -->
   <form id="signupForm"
       >
+      <!-- Language Toggle -->
+<div class="language-toggle">
+  <input type="radio" id="lang-en" name="preferred_language" value="English" checked>
+  <label for="lang-en">English</label>
+
+  <input type="radio" id="lang-es" name="preferred_language" value="Spanish">
+  <label for="lang-es">Español</label>
+
+  <span class="toggle-bg"></span>
+</div>
+
   <input type="text" id="name" name="name" placeholder="Full Name" required />
   <input type="email" id="email" name="email" placeholder="Email Address" required />
   <input type="password" id="password" name="password" placeholder="Password" required />
