@@ -248,4 +248,32 @@ document.addEventListener("DOMContentLoaded", () => {
       modal.style.display = "none";
     }
   });
+  async function fetchStudyHistory() {
+  const res = await fetch("/api/study-history");
+  const data = await res.json();
+  renderStudyHistory(data);
+}
+
+function renderStudyHistory(data) {
+  const container = document.querySelector(".study-quiz-history");
+  container.innerHTML = ""; 
+  data.forEach(entry => {
+    const div = document.createElement("div");
+    div.className = "category-item";
+    div.innerHTML = `
+      <button class="dropdown-btn">${entry.category} ▼</button>
+      <div class="dropdown-content">
+        <p>Attempts: ${entry.attempts}</p>
+        <p>Latest Score: ${entry.latest_score}%</p>
+        <p><a href="#" class="summary-link" data-summary="${entry.summary}">View Summary</a></p>
+      </div>`;
+    container.append(div);
+  });
+}
+
+// then in your DOMContentLoaded after the other two:
+fetch("/api/study-history")
+  .then(res => res.json())
+  .then(renderStudyHistory);
+
 });

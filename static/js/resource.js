@@ -1,4 +1,29 @@
 document.addEventListener("DOMContentLoaded", () => {
+  async function fetchUserProgress() {
+  try {
+    const res  = await fetch("/api/progress");
+    const data = await res.json();
+    renderProgress(data);
+  } catch (err) {
+    console.error("Failed to load progress:", err);
+  }
+}
+
+function renderProgress(data) {
+  // 1) Overall bar
+  const bar = document.querySelector(".overall-progress .progress-bar");
+  bar.style.width = `${data.overallProgress}%`;
+
+  // 2) Total quizzes
+  document.getElementById("metric-total-quizzes").innerHTML = `
+    ${translations[currentLang].milestones.quizzes}<br>
+    <strong>${data.totalQuizzes.completed} / ${data.totalQuizzes.total}</strong>`;
+
+  // 3) Categories mastered
+  document.getElementById("metric-categories-mastered").innerHTML = `
+    ${translations[currentLang].milestones.categories}<br>
+    <strong>${data.categoriesMastered.completed} / ${data.categoriesMastered.total}</strong>`;
+}
   // ===== Profile Dropdown Logic =====
   const dropdownToggle = document.getElementById("dropdownToggle");
   const dropdownMenu = document.getElementById("dropdownMenu");
@@ -80,6 +105,40 @@ document.addEventListener("DOMContentLoaded", () => {
   closeJoinPopup?.addEventListener("click", () => {
     joinPopup.style.display = "none";
   });
+
+  async function fetchRecentPerformance() {
+  try {
+    const res     = await fetch("/api/recent-quizzes");
+    const quizzes = await res.json();
+    renderRecentPerformance(quizzes);
+  } catch (err) {
+    console.error("Failed to load recent quizzes:", err);
+  }
+}
+
+function renderRecentPerformance(quizzes) {
+  const container = document.getElementById("recent-performance-container");
+
+  if (quizzes.length === 0) {
+    container.innerHTML = `<p data-i18n="recent.noData">No quizzes yet.</p>`;
+    applyTranslations();  // so “No quizzes yet.” gets localized
+    return;
+  }
+
+  container.innerHTML = quizzes.map(q => {
+    const scoreClass = q.score >= 90 ? "blue" :
+                       q.score >= 75 ? "green" : "pink";
+    const label      = translations[currentLang].items[q.category] || q.category;
+    return `
+      <div class="performance-row">
+        <div>
+          <strong>${q.title}</strong><br>
+          <small>${label}</small>
+        </div>
+        <span class="score ${scoreClass}">${q.score}%</span>
+      </div>`;
+  }).join("");
+}
 
   // ===== Dynamic Data Fetch =====
   fetchHospitals();
