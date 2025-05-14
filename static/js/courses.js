@@ -10,6 +10,56 @@ document.addEventListener("DOMContentLoaded", () => {
   const quizSection = document.getElementById("quiz-section");
   const languageBtn = document.querySelector(".language");
 
+  const lessonTitles = {
+    en: {
+      video: {
+        1: "Breast Cancer Awareness",
+        2: "Public Health Talk",
+        3: "Mammography Myth vs. Fact",
+      },
+      reading: {
+        1: "Myths vs. Fact",
+      },
+      quiz: {
+        1: "Introduction",
+      }
+    },
+    es: {
+      video: {
+        1: "Conciencia sobre el cáncer de mama",
+        2: "Charla de salud pública",
+        3: "Mito vs. Realidad de la mamografía",
+      },
+      reading: {
+        1: "Mitos vs. Realidad",
+      },
+      quiz: {
+        1: "Introducción",
+      }
+    }
+  };
+  function updateLessonTitles() {
+    lessons.forEach(lesson => {
+      const type   = lesson.dataset.type; // "video"|"reading"|"quiz"
+      const id     = lesson.dataset.id;   // "1","2",…
+      const prefix = type === "quiz"
+        ? (currentLanguage==="en" ? "Quiz:" : "Cuestionario:")
+        : type === "reading"
+          ? (currentLanguage==="en" ? "Reading:" : "Lectura:")
+          : "Video:";
+      const title  = lessonTitles[currentLanguage][type][id];
+      lesson.querySelector(".lesson-title").textContent = `${prefix} ${title}`;
+    });
+  }
+  function updateLanguageButton() {
+    languageBtn.textContent = currentLanguage === "en" ? "Español" : "English";
+  }
+  // ←—————————————————————————————
+
+  // 4. Now do your initial paint (before you wire up click-handlers)
+  updateLanguageButton();
+  updateLessonTitles();
+
   const videoMap = {
     en: {
       1: "Breast_Cancer_Awareness_03E.mp4",
@@ -208,40 +258,61 @@ player.on("pause", () => {
   async function loadStudyQuiz(categoryId) {
     updateProgress(`quiz${categoryId}`, "in_progress");
     updateLessonStatusUI(categoryId, "quiz", "in_progress");
-    const res = await fetch(`/api/study_quiz/${categoryId}?lang=${currentLanguage}`);
-    const questions = await res.json();
+    // 2. Fetch questions
+  const resQ = await fetch(`/api/study_quiz/${categoryId}?lang=${currentLanguage}`);
+  const questions = await resQ.json();
 
-    quizSection.innerHTML = `<h3>${currentLanguage === "en" ? "Study Quiz" : "Cuestionario de Estudio"}</h3>`;
+  // 3. Fetch saved answers
+  const resA = await fetch(`/api/study_answers/${categoryId}`);
+  const saved = await resA.json();
+  const savedMap = {};
+  saved.forEach(a => {
+    savedMap[a.study_question_id] = a.user_answer;
+  });
 
-    questions.forEach((q, i) => {
-      const questionDiv = document.createElement("div");
-      questionDiv.classList.add("quiz-q");
+      quizSection.innerHTML = `<h3>${
+    currentLanguage === "en" ? "Study Quiz" : "Cuestionario de Estudio"
+  }</h3>`;
 
-      let optionsHTML = "";
+  questions.forEach((q, i) => {
+    const userAns = savedMap[q.study_question_id] || "";
+    const questionDiv = document.createElement("div");
+    questionDiv.classList.add("quiz-q");
 
-      if (q.question_type === "Multiple Choice" || q.question_type === "T/F") {
-        q.options.forEach(opt => {
-          optionsHTML += `
-            <label class="quiz-option">
-              <input type="radio" name="q${i}" value="${opt.option_text}"> ${opt.option_text}
-            </label>
-          `;
-        });
-      } else if (q.question_type === "Short Response") {
-        optionsHTML = `
-          <textarea name="q${i}" placeholder="${currentLanguage === "en" ? "Your answer..." : "Tu respuesta..."}"></textarea>
-          <button class="mic-btn" data-index="${i}">🎤 Start Recording</button>
+    let optionsHTML = "";
+    if (q.question_type === "Multiple Choice" || q.question_type === "T/F") {
+      q.options.forEach(opt => {
+        // pre-check if this option text matches saved answer
+        const isChecked = userAns === opt.option_text ? 'checked' : '';
+        optionsHTML += `
+          <label class="quiz-option">
+            <input type="radio"
+                   name="q${i}"
+                   value="${opt.option_text}"
+                   ${isChecked}>
+            ${opt.option_text}
+          </label>
         `;
-      }
-
-      questionDiv.innerHTML = `
-        <p><strong>${i + 1}. ${q.question_text}</strong></p>
-        ${optionsHTML}
-        <button class="save-answer-btn" data-index="${i}">Save Answer</button>
+      });
+    } else if (q.question_type === "Short Response") {
+      // pre-fill textarea
+      optionsHTML = `
+        <textarea name="q${i}"
+                  placeholder="${
+                    currentLanguage === "en" ? "Your answer..." : "Tu respuesta..."
+                  }"
+        >${userAns}</textarea>
+        <button class="mic-btn" data-index="${i}">🎤 Start Recording</button>
       `;
+    }
 
-      quizSection.appendChild(questionDiv);
-    });
+    questionDiv.innerHTML = `
+      <p><strong>${i + 1}. ${q.question_text}</strong></p>
+      ${optionsHTML}
+      <button class="save-answer-btn" data-index="${i}">Save Answer</button>
+    `;
+    quizSection.appendChild(questionDiv);
+  });
 
     document.querySelectorAll(".save-answer-btn").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -540,6 +611,8 @@ player.on("pause", () => {
   languageBtn.addEventListener("click", () => {
     currentLanguage = currentLanguage === "en" ? "es" : "en";
     localStorage.setItem("preferredLanguage", currentLanguage);
+    updateLanguageButton();
+    updateLessonTitles();
     location.reload();
   });
   // <-- After all lessons loaded

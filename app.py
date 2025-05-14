@@ -814,6 +814,23 @@ def get_position():
 
     return jsonify(position=(row[0] if row else 0))
 
+@app.route("/api/study_answers/<int:category_id>")
+def get_saved_study_answers(category_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify([]), 200
+
+    conn = get_db_connection()
+    cur = conn.cursor(dictionary=True)
+    cur.execute("""
+      SELECT study_question_id, question_type, user_answer
+      FROM user_study_progress
+      WHERE user_id = %s AND category_id = %s
+    """, (user_id, category_id))
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return jsonify(rows), 200
 
 # ────── Run Server ──────
 if __name__ == "__main__":
