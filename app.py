@@ -240,11 +240,11 @@ def screening_detection():
 
 @app.route("/diagnosis")
 def diagnosis():
-    return render_template("diagnosis.html")
+    return render_template("Diagnosis.html")
 
 @app.route("/treatment")
 def treatment():
-    return render_template("treatment.html")
+    return render_template("Treatment.html")
 
 @app.route("/survivorship")
 def survivorship():
