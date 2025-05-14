@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
         3: "Mammography Myth vs. Fact",
       },
       reading: {
-        1: "Myths vs. Fact",
+        1: "Breast Cancer",
       },
       quiz: {
         1: "Introduction",
@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
         3: "Mito vs. Realidad de la mamografía",
       },
       reading: {
-        1: "Mitos vs. Realidad",
+        1: "Cáncer de Mama",
       },
       quiz: {
         1: "Introducción",
@@ -63,13 +63,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const videoMap = {
     en: {
       1: "Breast_Cancer_Awareness_03E.mp4",
-      2: "Public_Health_Talk_by_Breast_Cancer_Now_03E.mp4",
-      3: "Breast_Cancer_and_Mammography_Myth_vs_Fact_03E.mp4"
+      2: "Public_Health_Talk_by_Breast_Cancer_Now_04E.mp4",
+      3: "Breast_Cancer_and_Mammography_Myth_vs_Fact_06E.mp4"
     },
     es: {
       1: "Breast_Cancer_Awareness_03S.mp4",
-      2: "Public_Health_Talk_by_Breast_Cancer_Now_03S.mp4",
-      3: "Breast_Cancer_and_Mammography_Myth_vs_Fact_03S.mp4"
+      2: "Public_Health_Talk_by_Breast_Cancer_Now_04S.mp4",
+      3: "Breast_Cancer_and_Mammography_Myth_vs_Fact_06S.mp4"
     }
   };
 
@@ -77,6 +77,10 @@ document.addEventListener("DOMContentLoaded", () => {
     en: "Breast Cancer_En.pdf",
     es: "Breast Cancer_SP.pdf"
   };
+ const questionVideoIdMap = {
+   en: { 1: "03E", 2: "04E", 3: "06E" },
+   es: { 1: "03S", 2: "04S", 3: "06S" }
+ };
 
   // =============== VIDEO + EMBEDDED QUESTIONS ===============
   async function loadVideo(id) {
@@ -90,7 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.warn("Could not fetch resume position", e);
   }
   let lastAllowedTime = resumeTime;
-    const videoID = currentLanguage === "en" ? "03E" : "03S";
+    const videoID = questionVideoIdMap[currentLanguage][id];
     const videoURL = `/static/media/${videoMap[currentLanguage][id]}`;
 
     if (videojs.getPlayer("lesson-video")) {
@@ -183,7 +187,7 @@ player.on("pause", () => {
         updateLessonStatusUI(id, "video", "completed");
       }
     });
-
+    console.log("🗂 Loading questions for", videoID, "language:", currentLanguage);
     fetch(`/api/questions/${videoID}`)
       .then(res => res.json())
       .then(questions => {
@@ -391,40 +395,48 @@ player.on("pause", () => {
 }
   
   // helper to populate & show the modal
- function showQuizSummary(response) {
-  // 1) Destructure the response
+function showQuizSummary(response) {
   const { summary: items, total_awarded, total_possible } = response;
+  const isEn = currentLanguage === "en";
 
-  // 2) Update the total score
+  // localized labels
+  const scoreLabel      = isEn ? "Your Score"      : "Tu puntuación";
+  const correctLabel    = isEn ? "Correct"         : "Correcto";
+  const incorrectLabel  = isEn ? "Incorrect"       : "Incorrecto";
+  const fullyLabel      = isEn ? "Fully Correct"   : "Completamente correcto";
+  const partialLabel    = isEn ? "Partially Correct": "Parcialmente correcto";
+
+  // 1) Update the total score
   const scoreEl = document.getElementById("summaryScore");
-  scoreEl.textContent = `Your Score: ${total_awarded} / ${total_possible}`;
+  scoreEl.textContent = `${scoreLabel}: ${total_awarded} / ${total_possible}`;
 
-  // 3) Populate each question line
+  // 2) Populate each question line
   const list = document.getElementById("summaryList");
   list.innerHTML = "";
 
   items.forEach(item => {
     let statusText;
     if (item.max_points === 1) {
-      statusText = item.points_awarded === 1 ? "Correct" : "Incorrect";
+      statusText = item.points_awarded === 1 ? correctLabel : incorrectLabel;
     } else {
       statusText = item.points_awarded === 2
-        ? "Fully Correct"
+        ? fullyLabel
         : item.points_awarded === 1
-          ? "Partially Correct"
-          : "Incorrect";
+          ? partialLabel
+          : incorrectLabel;
     }
 
     const li = document.createElement("li");
     li.textContent =
-      `${item.question_id}: ${statusText} — Your answer: “${item.user_answer}” ` +
+      `${item.question_id}: ${statusText} — ${isEn ? "Your answer" : "Tu respuesta"}: “${item.user_answer}” ` +
       `(${item.points_awarded}/${item.max_points})`;
     list.appendChild(li);
   });
 
-  // 4) Finally show the modal
+  // 3) Show the modal
   document.getElementById("quizSummaryModal").style.display = "flex";
 }
+
  document
     .getElementById("closeSummary")
     .addEventListener("click", () => {
@@ -546,12 +558,29 @@ player.on("pause", () => {
   
   // =============== LESSON CLICK EVENTS ===============
   lessons.forEach(lesson => {
-    lesson.addEventListener("click", () => {
-      lessons.forEach(l => l.classList.remove("active"));
-      lesson.classList.add("active");
+lesson.addEventListener("click", async () => {
+    const type = lesson.dataset.type;
+    const id   = Number(lesson.dataset.id);
 
-      const type = lesson.dataset.type;
-      const id = lesson.dataset.id;
+    // if it's a quiz and already completed → confirm retake
+    if (type === "quiz" && lesson.classList.contains("completed")) {
+      const msg = currentLanguage === "en"
+        ? "You’ve already completed this quiz. Would you like to retake it?"
+        : "Ya completaste este cuestionario. ¿Quieres volver a intentarlo?";
+      if (!confirm(msg)) {
+        return;  // user cancelled → do nothing
+      }
+      // user wants to retake:
+      await fetch(`/api/clear_study_answers/${id}`, { method: "POST" });
+
+      // reset progress status in your progress table + UI
+      updateProgress(`quiz${id}`, "in_progress");
+      updateLessonStatusUI(id, "quiz", "in_progress");
+    }
+
+    //— now the normal “load” logic:
+    lessons.forEach(l => l.classList.remove("active"));
+    lesson.classList.add("active");
 
       videoWrapper.style.display = "none";
       readingSection.style.display = "none";
@@ -623,3 +652,4 @@ loadUserProgress()
   })
   .catch(err => console.error(err));
 });
+

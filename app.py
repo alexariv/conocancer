@@ -59,6 +59,7 @@ def signup():
     email = request.form.get("email")
     password = request.form.get("password")
     confirm_password = request.form.get("confirmPassword")
+    preferred_language = request.form.get("preferred_language", "English")  # ✅ retrieve selected lang
 
     if password != confirm_password:
         return jsonify({"error": "Passwords do not match"}), 400
@@ -71,7 +72,7 @@ def signup():
         cursor.execute("""
             INSERT INTO users (name, email, password_hash, preferred_language)
             VALUES (%s, %s, %s, %s)
-        """, (name, email, password_hash, "English"))
+        """, (name, email, password_hash, preferred_language))  # ✅ use selected lang
         conn.commit()
 
         # Retrieve the user_id of the newly created user
@@ -93,8 +94,7 @@ def signup():
     except Exception as e:
         print("Unexpected error during signup:", e)
         return jsonify({"error": "An unexpected error occurred."}), 500
-
-
+    
 # ------------------------
 # Login
 # ------------------------
@@ -831,6 +831,28 @@ def get_saved_study_answers(category_id):
     cur.close()
     conn.close()
     return jsonify(rows), 200
+
+# at the bottom of your routes:
+
+@app.route("/api/clear_study_answers/<int:category_id>", methods=["POST"])
+def clear_study_answers(category_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    # delete their previous attempt for this category
+    cur.execute("""
+      DELETE FROM user_study_progress
+      WHERE user_id = %s
+        AND category_id = %s
+    """, (user_id, category_id))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({"success": True})
+
 
 # ────── Run Server ──────
 if __name__ == "__main__":

@@ -803,7 +803,6 @@ button {
   pointer-events: none;
   transition: all 0.5s ease;
 }
-
 .modal-content {
   position: fixed;
   top: 20%;
@@ -818,4 +817,52 @@ button {
   z-index: 3000;
   box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
 }
+.language-toggle {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 20px;
+  position: relative;
+  background: #f1f1f1;
+  border-radius: 25px;
+  padding: 4px;
+  width: max-content;
+  margin: auto;
+}
 
+.language-toggle input[type="radio"] {
+  display: none;
+}
+
+.language-toggle label {
+  cursor: pointer;
+  padding: 8px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 20px;
+  color: #444;
+  z-index: 2;
+  transition: color 0.3s ease;
+}
+
+.language-toggle input#lang-en:checked ~ label[for="lang-en"],
+.language-toggle input#lang-es:checked ~ label[for="lang-es"] {
+  color: white;
+}
+
+.language-toggle .toggle-bg {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  width: 50%;
+  left: 0;
+  border-radius: 20px;
+  background-color: #7F2895;
+  z-index: 1;
+  transition: transform 0.3s ease;
+}
+
+.language-toggle input#lang-es:checked ~ .toggle-bg {
+  transform: translateX(100%);
+}
